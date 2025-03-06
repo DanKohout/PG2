@@ -93,7 +93,18 @@ void App::init_assets(void) {
     //
 
     //SHADERS - define & compile & link
-    const char* vertex_shader =
+    my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
+
+    Model my_model = Model("resources/objects/triangle.obj", my_shader);
+
+    scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
+    //scene.insert("my_first_object", my_model);
+    //scene.push_back("my_first_object", my_model);
+    
+    //ShaderProgram my_first_shader = ShaderProgram("resources/shaders/first.vert", "resources/shaders/first.frag");
+    //my_shader.activate()
+
+    /*const char* vertex_shader =
         "#version 460 core\n"
         "in vec3 attribute_Position;"
         "void main() {"
@@ -106,34 +117,34 @@ void App::init_assets(void) {
         "out vec4 FragColor;"
         "void main() {"
         "  FragColor = uniform_Color;"
-        "}";
+        "}";*/
 
-    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    /*GLuint vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &vertex_shader, NULL);
     glCompileShader(vs);
 
     GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fs, 1, &fragment_shader, NULL);
-    glCompileShader(fs);
+    glCompileShader(fs);*/
 
-    shader_prog_ID = glCreateProgram();
+    /*shader_prog_ID = glCreateProgram();
     glAttachShader(shader_prog_ID, fs);
     glAttachShader(shader_prog_ID, vs);
-    glLinkProgram(shader_prog_ID);
+    glLinkProgram(shader_prog_ID);*/
 
     //now we can delete shader parts (they can be reused, if you have more shaders)
     //the final shader program already linked and stored separately
-    glDetachShader(shader_prog_ID, fs);
+    /*glDetachShader(shader_prog_ID, fs);
     glDetachShader(shader_prog_ID, vs);
     glDeleteShader(vs);
-    glDeleteShader(fs);
+    glDeleteShader(fs);*/
 
     // 
     // Create and load data into GPU using OpenGL DSA (Direct State Access)
     //
 
     // Create VAO + data description (just envelope, or container...)
-    glCreateVertexArrays(1, &VAO_ID);
+    /*glCreateVertexArrays(1, &VAO_ID);
 
     GLint position_attrib_location = glGetAttribLocation(shader_prog_ID, "attribute_Position");
 
@@ -146,7 +157,7 @@ void App::init_assets(void) {
     glNamedBufferData(VBO_ID, triangle_vertices.size() * sizeof(vertex), triangle_vertices.data(), GL_STATIC_DRAW);
 
     // Connect together
-    glVertexArrayVertexBuffer(VAO_ID, 0, VBO_ID, 0, sizeof(vertex)); // (GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride)
+    glVertexArrayVertexBuffer(VAO_ID, 0, VBO_ID, 0, sizeof(vertex)); // (GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride)*/
 }
 
 
@@ -155,10 +166,14 @@ int App::run(void)
     try {
         //GLfloat r, g, b, a;
         r = g = b = a = 1.0f;
+        glm::vec4 my_rgba = { r,g,b,a };// ???-> dont know if it should be like this
 
-        glUseProgram(shader_prog_ID);
+        //glUseProgram(shader_prog_ID);;
+        my_shader.activate();
+        // ... shader MUST be active to set its uniforms!
+        my_shader.setUniform("my_color", my_rgba);
 
-        GLint uniform_color_location = glGetUniformLocation(shader_prog_ID, "uniform_Color");
+        GLint uniform_color_location = glGetUniformLocation(my_shader.ID/*shader_prog_ID*/, "uniform_Color");
         if (uniform_color_location == -1) {
             std::cerr << "Uniform location is not found in active shader program. Did you forget to activate it?\n";
         }
@@ -179,19 +194,21 @@ int App::run(void)
             //   glfwSetWindowShouldClose(window, GLFW_TRUE);
             // 
 
+            //my_shader.setUniform("uniform_color", glm::vec4(glm::sin(float(glfwGetTime()))),g,b,a)); -> postupne menici cervena
+
             // Clear OpenGL canvas, both color buffer and Z-buffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // Dynamically change color based on time
-            double time = glfwGetTime();
+            //double time = glfwGetTime();
             //r = static_cast<float>((sin(time) + 1) / 2);
             //g = static_cast<float>((cos(time) + 1) / 2);
             //b = static_cast<float>((sin(time * 0.5) + 1) / 2);
 
             glUniform4f(uniform_color_location, r, g, b, a);
 
-            glBindVertexArray(VAO_ID);
+            //glBindVertexArray(VAO_ID); 
 
-            glDrawArrays(GL_TRIANGLES, 0, triangle_vertices.size());
+            //glDrawArrays(GL_TRIANGLES, 0, /*triangle_vertices.size()*/);
 
             // Swap front and back buffers
             glfwSwapBuffers(window);
@@ -224,6 +241,7 @@ int App::run(void)
 
 App::~App()
 {
+    my_shader.clear();
     if (window)
         glfwDestroyWindow(window);
     glfwTerminate();

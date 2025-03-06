@@ -22,6 +22,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "gl_err_callback.hpp"
 #include "assets.hpp"
+#include "ShaderProgram.hpp"
+#include "Model.hpp"
 
 class App {
 public:
@@ -52,20 +54,23 @@ private:
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-    GLuint shader_prog_ID{ 0 };
+    ShaderProgram my_shader;
+    /*GLuint shader_prog_ID{0};//ShaderProgram my_shader
     GLuint VBO_ID{ 0 };
-    GLuint VAO_ID{ 0 };
+    GLuint VAO_ID{ 0 };*/
 
 
     GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 
-    std::vector<vertex> triangle_vertices =
+    /*std::vector<vertex> triangle_vertices =
     {
         {{0.0f,  0.5f,  0.0f}},
         {{0.5f, -0.5f,  0.0f}},
         {{-0.5f, -0.5f,  0.0f}}
-    };
+    };*/
 
+protected:
+    std::unordered_map<std::string, Model> scene;
     
 
 };
