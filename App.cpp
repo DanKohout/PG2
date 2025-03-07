@@ -97,7 +97,8 @@ void App::init_assets(void) {
 
     Model my_model = Model("resources/objects/triangle.obj", my_shader);
 
-    scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
+    //scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
+    scene.insert({ "my_first_object", my_model });
     //scene.insert("my_first_object", my_model);
     //scene.push_back("my_first_object", my_model);
     
@@ -165,15 +166,20 @@ int App::run(void)
 {
     try {
         //GLfloat r, g, b, a;
-        r = g = b = a = 1.0f;
+        r = g = b = a = 0.7f;
         glm::vec4 my_rgba = { r,g,b,a };// ???-> dont know if it should be like this
-
+        glm::vec3 rgb = { r,g,b };
         //glUseProgram(shader_prog_ID);;
         my_shader.activate();
         // ... shader MUST be active to set its uniforms!
-        my_shader.setUniform("my_color", my_rgba);
+        //my_shader.setUniform("color", rgb);
+        my_shader.setUniform("uniform_color", my_rgba);
 
-        GLint uniform_color_location = glGetUniformLocation(my_shader.ID/*shader_prog_ID*/, "uniform_Color");
+        GLint activeProgram = 0;
+        glGetIntegerv(GL_CURRENT_PROGRAM, &activeProgram);
+        std::cout << "Active Shader Program: " << activeProgram << std::endl;
+
+        GLint uniform_color_location = glGetUniformLocation(my_shader.ID/*shader_prog_ID*/, "uniform_color");
         if (uniform_color_location == -1) {
             std::cerr << "Uniform location is not found in active shader program. Did you forget to activate it?\n";
         }
@@ -207,8 +213,12 @@ int App::run(void)
             glUniform4f(uniform_color_location, r, g, b, a);
 
             //glBindVertexArray(VAO_ID); 
+            for (auto& [key, value] : scene) {
+                value.draw(my_shader);
+            }
 
-            //glDrawArrays(GL_TRIANGLES, 0, /*triangle_vertices.size()*/);
+            
+            //glDrawArrays(GL_TRIANGLES, 0, scene.size()/*triangle_vertices.size()*/);
 
             // Swap front and back buffers
             glfwSwapBuffers(window);

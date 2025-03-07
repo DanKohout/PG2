@@ -22,6 +22,9 @@ public:
         // TODO: call LoadOBJFile, LoadMTLFile (if exist), process data, create mesh and set its properties
         //    notice: you can load multiple meshes and place them to proper positions, 
         //            multiple textures (with reusing) etc. to construct single complicated Model   
+        //loadOBJFile(filename);  // Load mesh data from the OBJ file
+        //loadMTLFile(filename);  // Load material data from the MTL file
+        //createMeshes(shader);    // Create Mesh objects from loaded data
     }
 
     // update position etc. based on running time

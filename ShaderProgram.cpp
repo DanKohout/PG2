@@ -120,12 +120,25 @@ GLuint ShaderProgram::compile_shader(const std::filesystem::path& source_file, c
 {
 	GLuint shader_h;
 	shader_h = glCreateShader(type);
-	
+	if (shader_h == 0) {
+		throw std::runtime_error("Failed to create shader.");
+	}
+
+	// Read shader source code
+	std::string source_code = textFileRead(source_file);
+	const char* source_ptr = source_code.c_str();
+
+	// Attach source and compile
+	glShaderSource(shader_h, 1, &source_ptr, nullptr);
+	glCompileShader(shader_h);
+
 	//glGetShaderiv()
 	GLint cmpl_status;
 	glGetShaderiv(shader_h, GL_COMPILE_STATUS, &cmpl_status);
 	if (cmpl_status == GL_FALSE) {
-		std::cerr << getShaderInfoLog(shader_h);
+		std::cerr << "Shader compilation failed for " << source_file << ":\n"
+			<< getShaderInfoLog(shader_h);
+		//std::cerr << getShaderInfoLog(shader_h);
 		throw std::runtime_error("Shader compile err.\n");
 	}
     // TODO: implement ->done?
@@ -137,21 +150,22 @@ GLuint ShaderProgram::link_shader(const std::vector<GLuint> shader_ids)
 {
 	GLuint prog_h = glCreateProgram();
 
-	for (auto const id : shader_ids)//I added "auto" just to try !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	for (auto const id : shader_ids) {//I added "auto" just to try !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		glAttachShader(prog_h, id);
+	}
 
 	glLinkProgram(prog_h);
-	{ // TODO: implement: check link result, print info & throw error (if any)
+	 // TODO: implement: check link result, print info & throw error (if any)
 
-		// check link result, display error (if any) ->done?
-		GLint status;
-		glGetProgramiv(prog_h, GL_LINK_STATUS, &status);
-		if (status == GL_FALSE) {
-			std::cerr << getProgramInfoLog(prog_h);
-			throw std::runtime_error("Link err.\n");
-		}
-		return prog_h;
+	// check link result, display error (if any) ->done?
+	GLint status;
+	glGetProgramiv(prog_h, GL_LINK_STATUS, &status);
+	if (status == GL_FALSE) {
+		std::cerr << getProgramInfoLog(prog_h);
+		throw std::runtime_error("Link err.\n");
 	}
+	return prog_h;
+	
 }
 
 std::string ShaderProgram::textFileRead(const std::filesystem::path & filename)

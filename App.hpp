@@ -62,6 +62,7 @@ private:
 
     GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 
+    //Model my_model;
     /*std::vector<vertex> triangle_vertices =
     {
         {{0.0f,  0.5f,  0.0f}},

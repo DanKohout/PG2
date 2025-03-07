@@ -7,10 +7,12 @@ in vec3 aColor; // any additional attributes are optional, any data type, etc.
 
 out vec3 color; // optional output attribute
 
+uniform vec4 uniform_color; // Optional uniform in vertex shader
+
 void main()
 {
     // Outputs the positions/coordinates of all vertices, MUST WRITE
     gl_Position = vec4(aPos, 1.0f);
     
-    color = aColor; // copy color to output
+    color = aColor * uniform_color.rgb; // copy color to output
 }
