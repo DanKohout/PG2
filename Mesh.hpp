@@ -78,10 +78,10 @@ public:
         shader.activate();
         
         // Apply transformations
-        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), origin + offset);
+        /*glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), origin + offset);
         modelMatrix = glm::rotate(modelMatrix, glm::radians(orientation.y + rotation.y), glm::vec3(0, 1, 0));
 
-        shader.setUniform("model", modelMatrix);
+        shader.setUniform("model", modelMatrix);*/
         // for future use: set uniform variables: position, textures, etc...  
         //set texture id etc...
         //if (texture_id > 0) {
@@ -97,8 +97,14 @@ public:
         
         //TODO: draw mesh: bind vertex array object, draw all elements with selected primitive type 
         glBindVertexArray(VAO);
-        glDrawElements(primitive_type, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
+        //std::cout << "indices.size(): " << indices.size() << std::endl;
+        
+        // HELP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //glDrawElements(primitive_type, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+        glDrawArrays(primitive_type, 0, vertices.size()); 
+        // HELP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // 
+        //glBindVertexArray(0);
     }
 
 

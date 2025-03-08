@@ -8,6 +8,8 @@ in vec3 aColor; // any additional attributes are optional, any data type, etc.
 out vec3 color; // optional output attribute
 
 uniform vec4 uniform_color; // Optional uniform in vertex shader
+uniform mat4 model;
+//uniform ... texture 
 
 void main()
 {

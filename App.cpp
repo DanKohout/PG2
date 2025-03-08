@@ -214,11 +214,11 @@ int App::run(void)
 
             //glBindVertexArray(VAO_ID); 
             for (auto& [key, value] : scene) {
-                value.draw(my_shader);
+                //value.draw(my_shader);
+                value.draw();
             }
 
-            
-            //glDrawArrays(GL_TRIANGLES, 0, scene.size()/*triangle_vertices.size()*/);
+            //glDrawArrays(GL_TRIANGLES, 0, triangle_vertices.size());
 
             // Swap front and back buffers
             glfwSwapBuffers(window);
