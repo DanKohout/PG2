@@ -4,6 +4,7 @@
 #include <stack>
 #include <random>
 
+
 // OpenCV (does not depend on GL)
 #include <opencv2\opencv.hpp>
 

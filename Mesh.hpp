@@ -20,7 +20,7 @@ public:
     std::vector<GLuint> indices;
     
     GLuint texture_id{0}; // texture id=0  means no texture
-    GLenum primitive_type = GL_POINT;
+    GLenum primitive_type = GL_POINT;//GL_TRIANGLES;
     ShaderProgram &shader;
     
     // mesh material
@@ -100,8 +100,8 @@ public:
         //std::cout << "indices.size(): " << indices.size() << std::endl;
         
         // HELP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //glDrawElements(primitive_type, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
-        glDrawArrays(primitive_type, 0, vertices.size()); 
+        glDrawElements(primitive_type, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+        //glDrawArrays(primitive_type, 0, vertices.size()); 
         // HELP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // 
         //glBindVertexArray(0);

@@ -16,5 +16,5 @@ void main()
     // Outputs the positions/coordinates of all vertices, MUST WRITE
     gl_Position = vec4(aPos, 1.0f);
     
-    color = aColor * uniform_color.rgb; // copy color to output
+    color = /*aColor*/vec3(1.0f) * uniform_color.rgb; // copy color to output
 }

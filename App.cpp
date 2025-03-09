@@ -166,7 +166,7 @@ int App::run(void)
 {
     try {
         //GLfloat r, g, b, a;
-        r = g = b = a = 0.7f;
+        r = g = b = 0.7f; a = 1.0f;
         glm::vec4 my_rgba = { r,g,b,a };// ???-> dont know if it should be like this
         glm::vec3 rgb = { r,g,b };
         //glUseProgram(shader_prog_ID);;
@@ -186,22 +186,20 @@ int App::run(void)
 
         double fps_counter_seconds = 0;
         int fps_counter_frames = 0;
+
         while (!glfwWindowShouldClose(window))
         {
             
             // Time/FPS measure start
             auto fps_frame_start_timestamp = std::chrono::steady_clock::now();
 
-            //float delta_time = glfwGetTime() - last_frame_time;
-            //last_frame_time = glfwGetTime();
-            // ... do_something();
-            // 
+
             // if (condition)
             //   glfwSetWindowShouldClose(window, GLFW_TRUE);
             // 
 
             //my_shader.setUniform("uniform_color", glm::vec4(glm::sin(float(glfwGetTime()))),g,b,a)); -> postupne menici cervena
-
+            glClearColor(0.1f, 0.1f, 0.1f, 0.9f);
             // Clear OpenGL canvas, both color buffer and Z-buffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // Dynamically change color based on time
@@ -212,19 +210,26 @@ int App::run(void)
 
             glUniform4f(uniform_color_location, r, g, b, a);
 
-            //glBindVertexArray(VAO_ID); 
+            //glBindVertexArray(VAO_ID);-> moved to mesh.draw
+            
+
+            //glDrawArrays(GL_TRIANGLES, 0, triangle_vertices.size());-> moved to mesh.draw + changed
+            /*for (auto const& model : scene) {
+                model.draw();
+            }*/
             for (auto& [key, value] : scene) {
                 //value.draw(my_shader);
                 value.draw();
             }
 
-            //glDrawArrays(GL_TRIANGLES, 0, triangle_vertices.size());
+            // Poll for and process events
+            glfwPollEvents();
 
             // Swap front and back buffers
             glfwSwapBuffers(window);
 
             // Poll for and process events
-            glfwPollEvents();
+            //glfwPollEvents();
 
             auto fps_frame_end_timestamp = std::chrono::steady_clock::now();
             std::chrono::duration<double> fps_elapsed_seconds = fps_frame_end_timestamp - fps_frame_start_timestamp;
