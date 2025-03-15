@@ -5,6 +5,7 @@
 #include "assets.hpp"
 
 bool App::vsyncEnabled = false;
+Camera App::camera = Camera(glm::vec3(0, 0, 1000));
 
 App::App()
 {
@@ -74,9 +75,17 @@ bool App::init()
         // if (not_success)
         //  throw std::runtime_error("something went bad");
 
+        // set GL params
+        glEnable(GL_DEPTH_TEST); // use Z buffer
+
         if (!GLEW_ARB_direct_state_access)
             throw std::runtime_error("No DSA :-(");
         r = 1.0f, g = 0.0f, b = 0.0f;
+
+
+        glfwSetFramebufferSizeCallback(window, fbsize_callback);    // On GL framebuffer resize callback.
+        glfwSetScrollCallback(window, scroll_callback);             // On mouse wheel.
+
         init_assets();
     }
     catch (std::exception const& e) {
@@ -96,69 +105,18 @@ void App::init_assets(void) {
     my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
 
     Model my_model = Model("resources/objects/triangle.obj", my_shader);
+    Model temp_model = Model("resources/objects/triangle.obj", my_shader);
+    temp_model.origin.x = 10;
+    scene.try_emplace("triangle", temp_model);
+    temp_model.origin.x = 20;
+    scene.try_emplace("triangle2", temp_model);
 
     //scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
     scene.insert({ "my_first_object", my_model });
     //scene.insert("my_first_object", my_model);
     //scene.push_back("my_first_object", my_model);
     
-    //ShaderProgram my_first_shader = ShaderProgram("resources/shaders/first.vert", "resources/shaders/first.frag");
-    //my_shader.activate()
-
-    /*const char* vertex_shader =
-        "#version 460 core\n"
-        "in vec3 attribute_Position;"
-        "void main() {"
-        "  gl_Position = vec4(attribute_Position, 1.0);"
-        "}";
-
-    const char* fragment_shader =
-        "#version 460 core\n"
-        "uniform vec4 uniform_Color;"
-        "out vec4 FragColor;"
-        "void main() {"
-        "  FragColor = uniform_Color;"
-        "}";*/
-
-    /*GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vs, 1, &vertex_shader, NULL);
-    glCompileShader(vs);
-
-    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fs, 1, &fragment_shader, NULL);
-    glCompileShader(fs);*/
-
-    /*shader_prog_ID = glCreateProgram();
-    glAttachShader(shader_prog_ID, fs);
-    glAttachShader(shader_prog_ID, vs);
-    glLinkProgram(shader_prog_ID);*/
-
-    //now we can delete shader parts (they can be reused, if you have more shaders)
-    //the final shader program already linked and stored separately
-    /*glDetachShader(shader_prog_ID, fs);
-    glDetachShader(shader_prog_ID, vs);
-    glDeleteShader(vs);
-    glDeleteShader(fs);*/
-
-    // 
-    // Create and load data into GPU using OpenGL DSA (Direct State Access)
-    //
-
-    // Create VAO + data description (just envelope, or container...)
-    /*glCreateVertexArrays(1, &VAO_ID);
-
-    GLint position_attrib_location = glGetAttribLocation(shader_prog_ID, "attribute_Position");
-
-    glEnableVertexArrayAttrib(VAO_ID, position_attrib_location);
-    glVertexArrayAttribFormat(VAO_ID, position_attrib_location, 3, GL_FLOAT, GL_FALSE, offsetof(vertex, position));
-    glVertexArrayAttribBinding(VAO_ID, position_attrib_location, 0); // (GLuint vaobj, GLuint attribindex, GLuint bindingindex)
-
-    // Create and fill data
-    glCreateBuffers(1, &VBO_ID);
-    glNamedBufferData(VBO_ID, triangle_vertices.size() * sizeof(vertex), triangle_vertices.data(), GL_STATIC_DRAW);
-
-    // Connect together
-    glVertexArrayVertexBuffer(VAO_ID, 0, VBO_ID, 0, sizeof(vertex)); // (GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride)*/
+    
 }
 
 
@@ -184,6 +142,52 @@ int App::run(void)
             std::cerr << "Uniform location is not found in active shader program. Did you forget to activate it?\n";
         }
 
+
+        //
+        // Create and set projection matrix
+        // You can only set uniforms AFTER shader compile 
+        //
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);    // Get GL framebuffer size	
+
+        if (height <= 0) // avoid division by 0
+            height = 1;
+
+        float ratio = static_cast<float>(width) / height;
+
+        /*glm::mat4 projectionMatrix = glm::perspective(
+            glm::radians(60.0f), // The vertical Field of View, in radians: the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
+            ratio,			     // Aspect Ratio. Depends on the size of your window.
+            0.1f,                // Near clipping plane. Keep as big as possible, or you'll get precision issues.
+            20.0f              // 20000.0f  Far clipping plane. Keep as little as possible.
+        );
+        //set uniform for shaders - projection matrix
+        my_shader.setUniform("uP_m", projectionMatrix);
+        */
+        update_projection_matrix(window);
+
+        
+
+        //
+        // set viewport
+        //
+        glViewport(0, 0, width, height);
+        
+        camera.Position = glm::vec3(0.0f, 0.0f, 10.0f);
+
+        //
+        // set View matrix - no transformation (so far), e.g. identity matrix (unit matrix)
+        //
+        glm::mat4 v_m = glm::identity<glm::mat4>();
+        my_shader.setUniform("uV_m", v_m);
+
+        //
+        // set Model matrix - no transformations (so far), e.g. identity matrix (unit matrix)
+        //
+        glm::mat4 m_m = glm::identity<glm::mat4>();
+        my_shader.setUniform("uM_m", m_m);
+
+
         double fps_counter_seconds = 0;
         int fps_counter_frames = 0;
 
@@ -194,14 +198,23 @@ int App::run(void)
             auto fps_frame_start_timestamp = std::chrono::steady_clock::now();
 
 
-            // if (condition)
-            //   glfwSetWindowShouldClose(window, GLFW_TRUE);
-            // 
+            //set View matrix = set CAMERA
+            /*glm::mat4 v_m = glm::lookAt(
+                glm::vec3(0, 0, 10),//1000), // position of camera -> pozor na ten maly trojuhelnik -> bude prtavej
+                glm::vec3(0, 0, 0),    // where to look
+                glm::vec3(0, 1, 0)     // up direction
+            );*/
+            glm::mat4 v_m = camera.GetViewMatrix();
+
+            // set uniforms for shader - common for all objects (do not set for each object individually, they use same shader anyway)
+            my_shader.setUniform("uV_m", v_m);
+            my_shader.setUniform("uP_m", projection_matrix);
 
             //my_shader.setUniform("uniform_color", glm::vec4(glm::sin(float(glfwGetTime()))),g,b,a)); -> postupne menici cervena
-            glClearColor(0.1f, 0.1f, 0.1f, 0.9f);
+            glClearColor(0.5f, 0.1f, 0.1f, 0.9f);
             // Clear OpenGL canvas, both color buffer and Z-buffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            
             // Dynamically change color based on time
             //double time = glfwGetTime();
             //r = static_cast<float>((sin(time) + 1) / 2);
@@ -210,10 +223,6 @@ int App::run(void)
 
             glUniform4f(uniform_color_location, r, g, b, a);
 
-            //glBindVertexArray(VAO_ID);-> moved to mesh.draw
-            
-
-            //glDrawArrays(GL_TRIANGLES, 0, triangle_vertices.size());-> moved to mesh.draw + changed
             /*for (auto const& model : scene) {
                 model.draw();
             }*/
@@ -222,14 +231,17 @@ int App::run(void)
                 value.draw();
             }
 
-            // Poll for and process events
-            glfwPollEvents();
-
-            // Swap front and back buffers
-            glfwSwapBuffers(window);
+            //scene.at("triangle").draw();
 
             // Poll for and process events
             //glfwPollEvents();
+
+            // Swap front and back buffers
+            glfwSwapBuffers(window);
+            //glfwSwapBuffers(globals.window);
+
+            // Poll for and process events
+            glfwPollEvents();
 
             auto fps_frame_end_timestamp = std::chrono::steady_clock::now();
             std::chrono::duration<double> fps_elapsed_seconds = fps_frame_end_timestamp - fps_frame_start_timestamp;
@@ -253,6 +265,26 @@ int App::run(void)
     std::cout << "Finished OK...\n";
     return EXIT_SUCCESS;
 }
+
+
+void App::update_projection_matrix(/*void*/GLFWwindow* window)
+{
+    auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (this_inst->height < 1)
+        this_inst->height = 1;   // avoid division by 0
+
+    float ratio = static_cast<float>(this_inst->width) / this_inst->height;
+
+    this_inst->projection_matrix = glm::perspective(
+        glm::radians(this_inst->fov),   // The vertical Field of View, in radians: the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
+        ratio,               // Aspect Ratio. Depends on the size of your window.
+        0.1f,                // Near clipping plane. Keep as big as possible, or you'll get precision issues.
+        200.0f             // 20000.0f Far clipping plane. Keep as little as possible.
+    );
+}
+
+
+
 
 App::~App()
 {

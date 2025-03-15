@@ -106,7 +106,27 @@ public:
         // 
         //glBindVertexArray(0);
     }
+    void draw(glm::mat4 const& model_matrix) {
+        if (VAO == 0) {
+            std::cerr << "VAO not initialized!\n";
+            return;
+        }
 
+        shader.activate();
+
+        // Set model matrix uniform in the shader
+        shader.setUniform("uM_m", model_matrix);
+
+        if (texture_id > 0) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            shader.setUniform("texture", 0);
+        }
+
+        glBindVertexArray(VAO);
+        glDrawElements(primitive_type, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
 
 	void clear(void) {
         texture_id = 0;

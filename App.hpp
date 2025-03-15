@@ -26,6 +26,8 @@
 #include "ShaderProgram.hpp"
 #include "Model.hpp"
 
+#include "camera.hpp"
+
 class App {
 public:
     App();
@@ -45,6 +47,9 @@ private:
 
     GLFWwindow* window = NULL;
 
+    static Camera camera;
+    //glm::vec3 camera_movement{};
+
     void GetInformation(void);
     void init_assets(void);
 
@@ -54,25 +59,25 @@ private:
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+    static void fbsize_callback(GLFWwindow* window, int width, int height);
+    static void update_projection_matrix(GLFWwindow* window);
 
     ShaderProgram my_shader;
-    /*GLuint shader_prog_ID{0};//ShaderProgram my_shader
-    GLuint VBO_ID{ 0 };
-    GLuint VAO_ID{ 0 };*/
-
 
     GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 
-    //Model my_model;
 
-    /*std::vector<vertex> triangle_vertices =
-    {
-        {{0.0f,  0.5f,  0.0f}},
-        {{0.5f, -0.5f,  0.0f}},
-        {{-0.5f, -0.5f,  0.0f}}
-    };*/
 
 protected:
+    // projection related variables    
+    int width{ 0 }, height{ 0 };
+    float fov = 60.0f;
+    // store projection matrix here, update only on callbacks
+    glm::mat4 projection_matrix = glm::identity<glm::mat4>();
+
+
+
+    // all objects of the scene
     std::unordered_map<std::string, Model> scene;
     
 

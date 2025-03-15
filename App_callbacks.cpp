@@ -31,6 +31,29 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
     }
 }
 
+void App::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    // get App instance
+    auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
+    this_inst->fov += 10 * yoffset; // yoffset is mostly +1 or -1; one degree difference in fov is not visible
+    this_inst->fov = std::clamp(this_inst->fov, 20.0f, 170.0f); // limit FOV to reasonable values...
+
+    this_inst->update_projection_matrix(window);
+}
+
+void App::fbsize_callback(GLFWwindow* window, int width, int height)
+{
+    auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
+    this_inst->width = width;
+    this_inst->height = height;
+
+    // set viewport
+    glViewport(0, 0, width, height);
+    //now your canvas has [0,0] in bottom left corner, and its size is [width x height] 
+
+    this_inst->update_projection_matrix(window);
+};
+
 
 
 
