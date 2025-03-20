@@ -53,7 +53,10 @@ public:
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             direction += Right;
         //... right, up, down, diagonal, ... 
-            
+        
+        if (glm::length(direction) < 0.00001)
+            return glm::vec3(0.0f);
+
         return glm::normalize(direction) * MovementSpeed * deltaTime;
         //normalization is there for the speed to not change when going diagonal
     }

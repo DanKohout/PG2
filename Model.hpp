@@ -17,10 +17,10 @@ public:
     std::string name;
 
     // original position
-    glm::vec3 origin{};
-    glm::vec3 orientation{}; //rotation by x,y,z axis, in radians 
-    glm::vec3 scale{};
-    glm::mat4 local_model_matrix{}; //for complex transformations 
+    glm::vec3 origin{0.0};
+    glm::vec3 orientation{0.0}; //rotation by x,y,z axis, in radians 
+    glm::vec3 scale{1.0};
+    glm::mat4 local_model_matrix{1.0}; //for complex transformations 
 
 
     //std::vector < glm::vec3 >& out_vertices;
@@ -38,6 +38,10 @@ public:
         
         /*std::string outfilename_str = filename.string(); // or outfilename.u8string()
         const char* outfilename_ptr = outfilename_str.c_str();
+
+        std::vector < glm::vec3 > out_vertices;
+        std::vector < glm::vec2 > out_uvs;
+        std::vector < glm::vec3 > out_normals;
         loadOBJ(outfilename_ptr, out_vertices, out_uvs, out_normals);
 
         meshes.emplace_back(

@@ -5,7 +5,7 @@
 #include "assets.hpp"
 
 bool App::vsyncEnabled = false;
-Camera App::camera = Camera(glm::vec3(0, 0, 1000));
+Camera App::camera = Camera(glm::vec3(0, 0, 2));
 
 App::App()
 {
@@ -105,12 +105,14 @@ void App::init_assets(void) {
     my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
 
     Model my_model = Model("resources/objects/triangle.obj", my_shader);
-    Model temp_model = Model("resources/objects/triangle.obj", my_shader);
+    //my_model.origin.x = 0.3;
+
+    /*Model temp_model = Model("resources/objects/triangle.obj", my_shader);
     temp_model.origin.x = 10;
     scene.try_emplace("triangle", temp_model);
     temp_model.origin.x = 20;
-    scene.try_emplace("triangle2", temp_model);
-
+    scene.try_emplace("triangle2", temp_model);*/
+    
     //scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
     scene.insert({ "my_first_object", my_model });
     //scene.insert("my_first_object", my_model);
@@ -141,52 +143,24 @@ int App::run(void)
         if (uniform_color_location == -1) {
             std::cerr << "Uniform location is not found in active shader program. Did you forget to activate it?\n";
         }
-
-
-        //
-        // Create and set projection matrix
-        // You can only set uniforms AFTER shader compile 
-        //
-        int width, height;
+  
         glfwGetFramebufferSize(window, &width, &height);    // Get GL framebuffer size	
 
-        if (height <= 0) // avoid division by 0
-            height = 1;
-
-        float ratio = static_cast<float>(width) / height;
-
-        /*glm::mat4 projectionMatrix = glm::perspective(
-            glm::radians(60.0f), // The vertical Field of View, in radians: the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
-            ratio,			     // Aspect Ratio. Depends on the size of your window.
-            0.1f,                // Near clipping plane. Keep as big as possible, or you'll get precision issues.
-            20.0f              // 20000.0f  Far clipping plane. Keep as little as possible.
-        );
-        //set uniform for shaders - projection matrix
-        my_shader.setUniform("uP_m", projectionMatrix);
-        */
         update_projection_matrix(window);
+       
+        //set uniform for shaders - projection matrix
+        my_shader.setUniform("uP_m", projection_matrix);
+        
+      
 
         
 
         //
         // set viewport
         //
-        glViewport(0, 0, width, height);
+        //glViewport(0, 0, width, height);
         
-        camera.Position = glm::vec3(0.0f, 0.0f, 10.0f);
-
-        //
-        // set View matrix - no transformation (so far), e.g. identity matrix (unit matrix)
-        //
-        glm::mat4 v_m = glm::identity<glm::mat4>();
-        my_shader.setUniform("uV_m", v_m);
-
-        //
-        // set Model matrix - no transformations (so far), e.g. identity matrix (unit matrix)
-        //
-        glm::mat4 m_m = glm::identity<glm::mat4>();
-        my_shader.setUniform("uM_m", m_m);
-
+        camera.Position = glm::vec3(-0.3f, 0.0f, 0.0f);
 
         double fps_counter_seconds = 0;
         int fps_counter_frames = 0;
@@ -197,18 +171,15 @@ int App::run(void)
             // Time/FPS measure start
             auto fps_frame_start_timestamp = std::chrono::steady_clock::now();
 
+            scene.at("my_first_object").origin.x = 0.3 * sin(glfwGetTime());
 
-            //set View matrix = set CAMERA
-            /*glm::mat4 v_m = glm::lookAt(
-                glm::vec3(0, 0, 10),//1000), // position of camera -> pozor na ten maly trojuhelnik -> bude prtavej
-                glm::vec3(0, 0, 0),    // where to look
-                glm::vec3(0, 1, 0)     // up direction
-            );*/
+            camera.Position += camera.ProcessInput(window, 0.001);
+
             glm::mat4 v_m = camera.GetViewMatrix();
 
             // set uniforms for shader - common for all objects (do not set for each object individually, they use same shader anyway)
             my_shader.setUniform("uV_m", v_m);
-            my_shader.setUniform("uP_m", projection_matrix);
+            //my_shader.setUniform("uP_m", projection_matrix);
 
             //my_shader.setUniform("uniform_color", glm::vec4(glm::sin(float(glfwGetTime()))),g,b,a)); -> postupne menici cervena
             glClearColor(0.5f, 0.1f, 0.1f, 0.9f);
@@ -279,7 +250,7 @@ void App::update_projection_matrix(/*void*/GLFWwindow* window)
         glm::radians(this_inst->fov),   // The vertical Field of View, in radians: the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
         ratio,               // Aspect Ratio. Depends on the size of your window.
         0.1f,                // Near clipping plane. Keep as big as possible, or you'll get precision issues.
-        200.0f             // 20000.0f Far clipping plane. Keep as little as possible.
+        10.0f             // 20000.0f Far clipping plane. Keep as little as possible.
     );
 }
 
