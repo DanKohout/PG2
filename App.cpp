@@ -49,6 +49,9 @@ bool App::init()
         glfwSetWindowUserPointer(window, this);
         glfwSetKeyCallback(window, key_callback);
 
+        //Cursor "dissapear"
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
 
         GetInformation();
@@ -85,6 +88,8 @@ bool App::init()
 
         glfwSetFramebufferSizeCallback(window, fbsize_callback);    // On GL framebuffer resize callback.
         glfwSetScrollCallback(window, scroll_callback);             // On mouse wheel.
+        glfwSetCursorPosCallback(window, cursor_position_callback);
+
 
         init_assets();
     }
@@ -107,11 +112,11 @@ void App::init_assets(void) {
     Model my_model = Model("resources/objects/triangle.obj", my_shader);
     //my_model.origin.x = 0.3;
 
-    /*Model temp_model = Model("resources/objects/triangle.obj", my_shader);
-    temp_model.origin.x = 10;
+    Model temp_model = Model("resources/objects/triangle.obj", my_shader);
+    temp_model.origin.x = 2;
     scene.try_emplace("triangle", temp_model);
-    temp_model.origin.x = 20;
-    scene.try_emplace("triangle2", temp_model);*/
+    temp_model.origin.x = 4;
+    scene.try_emplace("triangle2", temp_model);
     
     //scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
     scene.insert({ "my_first_object", my_model });
@@ -165,15 +170,23 @@ int App::run(void)
         double fps_counter_seconds = 0;
         int fps_counter_frames = 0;
 
+        float lastFrameTime = static_cast<float>(glfwGetTime()); // Store the time of the last frame
+
         while (!glfwWindowShouldClose(window))
         {
             
             // Time/FPS measure start
             auto fps_frame_start_timestamp = std::chrono::steady_clock::now();
 
+            //camera timing
+            float currentFrameTime = static_cast<float>(glfwGetTime());
+            float deltaTime = currentFrameTime - lastFrameTime; // Time difference
+            lastFrameTime = currentFrameTime; // Update lastFrameTime
+            camera.Position += camera.ProcessInput(window, deltaTime);
+
+
             scene.at("my_first_object").origin.x = 0.3 * sin(glfwGetTime());
 
-            camera.Position += camera.ProcessInput(window, 0.001);
 
             glm::mat4 v_m = camera.GetViewMatrix();
 

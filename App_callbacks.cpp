@@ -1,5 +1,5 @@
 
-#include "app.hpp"
+#include "App.hpp"
 
 
 
@@ -29,6 +29,15 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
     else if (key == GLFW_KEY_B && action == GLFW_PRESS) {
         this_inst->b = (this_inst->b >= 1.0f) ? 0.0f : this_inst->b + 0.1f;
     }
+    else if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        int cursorMode = glfwGetInputMode(window, GLFW_CURSOR);
+
+        // Toggle between normal (unlocked) and disabled (locked)
+        if (cursorMode == GLFW_CURSOR_DISABLED)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);  // Unlock and show cursor
+        else
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // Lock and hide cursor
+    }
 }
 
 void App::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -40,6 +49,31 @@ void App::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
     this_inst->update_projection_matrix(window);
 }
+
+
+void App::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
+    static bool firstMouse = true;
+    static float lastX = 400, lastY = 300;  // Assume the screen center initially
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // Reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+
+    // Call the function on your Camera object (assuming it's named 'camera')
+    this_inst->camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
 
 void App::fbsize_callback(GLFWwindow* window, int width, int height)
 {
