@@ -10,6 +10,7 @@
 #include "Mesh.hpp"
 #include "ShaderProgram.hpp"
 #include "OBJloader.hpp"
+#include "Texture.hpp"
 
 class Model
 {
@@ -26,7 +27,43 @@ public:
     //ShaderProgram& shader_model;
     GLuint tex_ID = 0;  // Texture ID for model
 
-    Model(const std::filesystem::path& filename, ShaderProgram& shader) {
+    /*Model(const std::filesystem::path& filename, ShaderProgram& shader) { //for triangle
+        loadOBJFile(filename, shader);  // Load mesh data from the OBJ file
+    }*/
+
+    //NO TEXTURE
+    Model(const std::filesystem::path& filename, ShaderProgram& shader) { //NO TEXTURE
+        std::string outfilename_str = filename.string(); // or outfilename.u8string()
+        const char* outfilename_ptr = outfilename_str.c_str();
+
+        std::vector < glm::vec3 > out_vertices;
+        std::vector < glm::vec2 > out_uvs;
+        std::vector < glm::vec3 > out_normals;
+        std::vector < GLuint > out_indices;
+        loadOBJ(outfilename_ptr, out_vertices, out_uvs, out_normals, out_indices);
+
+        std::vector<Vertex> meshVertices;
+
+        for (size_t i = 0; i < out_vertices.size(); i++) {
+            Vertex vertex{};
+            vertex.Position = out_vertices[i];
+            vertex.Normal = out_normals[i];
+            vertex.TexCoords = out_uvs[i];
+            meshVertices.push_back(vertex);
+        }
+
+        meshes.emplace_back(
+            GL_TRIANGLES,    // primitive_type (assuming triangles)
+            shader,          // Shader reference
+            meshVertices,        // Vertex data
+            out_indices,         // Index data
+            glm::vec3(0.0f), // Origin (default: no translation)
+            glm::vec3(0.0f)  // Orientation (default: no rotation)
+        );
+    }
+
+    //WITH TEXTURE
+    Model(const std::filesystem::path& filename, ShaderProgram& shader, const std::filesystem::path& texture_file_path) {//WITH TEXTURE
         // load mesh (all meshes) of the model, load material of each mesh, load textures...
         // TODO: call LoadOBJFile, LoadMTLFile (if exist), process data, create mesh and set its properties
         //    notice: you can load multiple meshes and place them to proper positions, 
@@ -53,19 +90,18 @@ public:
             vertex.TexCoords = out_uvs[i];
             meshVertices.push_back(vertex);
         }
-        
+        //std::filesystem::path texture_file_path = "./resources/textures/my_tex.png";
+        GLuint texture_id = textureInit(texture_file_path.string().c_str());
+
         meshes.emplace_back(
             GL_TRIANGLES,    // primitive_type (assuming triangles)
             shader,          // Shader reference
             meshVertices,        // Vertex data
             out_indices,         // Index data
             glm::vec3(0.0f), // Origin (default: no translation)
-            glm::vec3(0.0f)  // Orientation (default: no rotation)
+            glm::vec3(0.0f),  // Orientation (default: no rotation)
+            texture_id
         );
-
-        
-
-
     }
 
     // update position etc. based on running time
@@ -92,16 +128,9 @@ public:
 
         glm::mat4 model_matrix = local_model_matrix * s * rz * ry * rx * t * m_s * m_rz * m_ry * m_rx * m_off;
 
-        
-        //shader_model.activate();//idk if its needed
-
         //glUniformMatrix4fv(glGetUniformLocation(shader_model.ID, "uM_m"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
-        // Bind texture if available
-        /*if (tex_ID) {
-            glBindTextureUnit(GL_TEXTURE0, tex_ID);
-            glUniform1i(glGetUniformLocation(shader_model.ID, "tex0"), 0); // Set texture unit in fragment shader
-        }*/
+        
 
         // call draw() on mesh (all meshes)
         for (auto /*const&*/ mesh : meshes) {
@@ -116,8 +145,10 @@ public:
         }
     }
 
+
 private:
     void loadOBJFile(const std::filesystem::path& filename, ShaderProgram& shader);
     /*void createMeshes(ShaderProgram& shader);*/
+
 };
 

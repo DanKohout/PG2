@@ -81,6 +81,9 @@ bool App::init()
         // set GL params
         glEnable(GL_DEPTH_TEST); // use Z buffer
 
+        // assume ALL objects are non-transparent 
+        glEnable(GL_CULL_FACE);
+
         if (!GLEW_ARB_direct_state_access)
             throw std::runtime_error("No DSA :-(");
         r = 1.0f, g = 0.0f, b = 0.0f;
@@ -109,7 +112,9 @@ void App::init_assets(void) {
     //SHADERS - define & compile & link
     my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
 
-    Model my_model = Model("resources/objects/bunny_tri_vnt.obj", my_shader);
+    std::filesystem::path texture_file_path = "./resources/textures/my_tex.png";
+
+    Model my_model = Model("resources/objects/cube_triangles_vnt.obj", my_shader, texture_file_path);
     //my_model.origin.x = 0.3;
 
     /*Model temp_model = Model("resources/objects/triangle.obj", my_shader);

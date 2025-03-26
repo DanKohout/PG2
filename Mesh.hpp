@@ -65,11 +65,11 @@ public:
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));  // Texture Coordinates
 
         glBindVertexArray(0); // Unbind VAO
-
+        
     };
 
     
-    void draw(glm::vec3 const & offset, glm::vec3 const & rotation ) {
+    void draw(glm::vec3 const & offset, glm::vec3 const & rotation) {
  		if (VAO == 0) {//VAO=VERTEXT ARRAY OBJECT
 			std::cerr << "VAO not initialized!\n";
 			return;
@@ -88,22 +88,20 @@ public:
         //    ...
         //}
         
-
+        // Bind texture if available
         if (texture_id > 0) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture_id);
-            shader.setUniform("texture", 0);
+            //shader.setUniform("tex0", 0);
+            glUniform1i(glGetUniformLocation(shader.ID, "tex0"), 0); // Set texture unit in fragment shader
         }
         
         //TODO: draw mesh: bind vertex array object, draw all elements with selected primitive type 
-        glBindVertexArray(VAO);
-        //std::cout << "indices.size(): " << indices.size() << std::endl;
+        glBindVertexArray(VAO);        
         
-        // HELP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         glDrawElements(primitive_type, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
         //glDrawArrays(primitive_type, 0, vertices.size()); 
-        // HELP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // 
+        
         //glBindVertexArray(0);
     }
     void draw(glm::mat4 const& model_matrix) {
@@ -120,7 +118,8 @@ public:
         if (texture_id > 0) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture_id);
-            shader.setUniform("texture", 0);
+            //shader.setUniform("tex0", 0);
+            glUniform1i(glGetUniformLocation(shader.ID, "tex0"), 0); // Set texture unit in fragment shader
         }
 
         glBindVertexArray(VAO);
@@ -129,6 +128,9 @@ public:
     }
 
 	void clear(void) {
+        if (texture_id) {   // or all textures in vector...
+            glDeleteTextures(1, &texture_id);
+        }
         texture_id = 0;
         primitive_type = GL_POINT;
         // TODO: clear rest of the member variables to safe default
@@ -139,6 +141,7 @@ public:
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
         glDeleteVertexArrays(1, &VAO);
+        
         
     };
 

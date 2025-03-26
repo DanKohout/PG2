@@ -15,11 +15,11 @@ uniform vec4 my_color; // Uniform variable
 
 void main()
 {
-    FragColor =  /*my_color*/ vec4(color, 1.0f); // copy RGB color, add Alpha=1.0 (not transparent)
+    //FragColor =  /*my_color*/ vec4(color, 1.0f); // copy RGB color, add Alpha=1.0 (not transparent)
     
     // use only texture
-    //FragColor = texture(tex0, fs_in.texcoord);
+    FragColor = texture(tex0, fs_in.texcoord);
 
     // combine with material
-    // FragColor = mycolor * texture(tex0, fs_in.texcoord);
+    //FragColor = my_color * texture(tex0, fs_in.texcoord);
 }
