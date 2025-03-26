@@ -5,10 +5,11 @@
 #include <vector> 
 #include <glm/glm.hpp> 
 
+
 #include "Vertex.hpp"
 #include "Mesh.hpp"
 #include "ShaderProgram.hpp"
-//#include "OBJloader.hpp"
+#include "OBJloader.hpp"
 
 class Model
 {
@@ -22,36 +23,48 @@ public:
     glm::vec3 scale{1.0};
     glm::mat4 local_model_matrix{1.0}; //for complex transformations 
 
-
-    //std::vector < glm::vec3 >& out_vertices;
-    //std::vector < glm::vec2 >& out_uvs;
-    //std::vector < glm::vec3 >& out_normals;
+    //ShaderProgram& shader_model;
+    GLuint tex_ID = 0;  // Texture ID for model
 
     Model(const std::filesystem::path& filename, ShaderProgram& shader) {
         // load mesh (all meshes) of the model, load material of each mesh, load textures...
         // TODO: call LoadOBJFile, LoadMTLFile (if exist), process data, create mesh and set its properties
         //    notice: you can load multiple meshes and place them to proper positions, 
         //            multiple textures (with reusing) etc. to construct single complicated Model   
-        loadOBJFile(filename, shader);  // Load mesh data from the OBJ file
+        //loadOBJFile(filename, shader);  // Load mesh data from the OBJ file
         //loadMTLFile(filename);  // Load material data from the MTL file
         //createMeshes(shader);    // Create Mesh objects from loaded data
-        
-        /*std::string outfilename_str = filename.string(); // or outfilename.u8string()
+        //shader_model = shader;
+        std::string outfilename_str = filename.string(); // or outfilename.u8string()
         const char* outfilename_ptr = outfilename_str.c_str();
 
         std::vector < glm::vec3 > out_vertices;
         std::vector < glm::vec2 > out_uvs;
         std::vector < glm::vec3 > out_normals;
-        loadOBJ(outfilename_ptr, out_vertices, out_uvs, out_normals);
+        std::vector < GLuint > out_indices;
+        loadOBJ(outfilename_ptr, out_vertices, out_uvs, out_normals, out_indices);
+        
+        std::vector<Vertex> meshVertices;
 
+        for (size_t i = 0; i < out_vertices.size(); i++) {
+            Vertex vertex{};
+            vertex.Position = out_vertices[i];
+            vertex.Normal = out_normals[i];
+            vertex.TexCoords = out_uvs[i];
+            meshVertices.push_back(vertex);
+        }
+        
         meshes.emplace_back(
             GL_TRIANGLES,    // primitive_type (assuming triangles)
             shader,          // Shader reference
-            out_vertices,        // Vertex data
+            meshVertices,        // Vertex data
             out_indices,         // Index data
             glm::vec3(0.0f), // Origin (default: no translation)
             glm::vec3(0.0f)  // Orientation (default: no rotation)
-        );*/
+        );
+
+        
+
 
     }
 
@@ -79,7 +92,16 @@ public:
 
         glm::mat4 model_matrix = local_model_matrix * s * rz * ry * rx * t * m_s * m_rz * m_ry * m_rx * m_off;
 
+        
+        //shader_model.activate();//idk if its needed
 
+        //glUniformMatrix4fv(glGetUniformLocation(shader_model.ID, "uM_m"), 1, GL_FALSE, glm::value_ptr(model_matrix));
+
+        // Bind texture if available
+        /*if (tex_ID) {
+            glBindTextureUnit(GL_TEXTURE0, tex_ID);
+            glUniform1i(glGetUniformLocation(shader_model.ID, "tex0"), 0); // Set texture unit in fragment shader
+        }*/
 
         // call draw() on mesh (all meshes)
         for (auto /*const&*/ mesh : meshes) {

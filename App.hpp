@@ -61,12 +61,13 @@ private:
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
     static void fbsize_callback(GLFWwindow* window, int width, int height);
     static void update_projection_matrix(GLFWwindow* window);
-
+    
     ShaderProgram my_shader;
 
     GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 
-
+    GLuint textureInit(const std::filesystem::path& file_name);
+    GLuint gen_tex(cv::Mat& image);
 
 protected:
     // projection related variables    
