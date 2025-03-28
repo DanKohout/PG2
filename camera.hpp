@@ -52,6 +52,10 @@ public:
 
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             direction += Right;
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            direction += Up;
+        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+            direction += -Up;
         //... right, up, down, diagonal, ... 
         
         if (glm::length(direction) < 0.00001)

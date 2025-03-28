@@ -27,6 +27,14 @@ public:
     //ShaderProgram& shader_model;
     GLuint tex_ID = 0;  // Texture ID for model
 
+    /*
+    /   - transparency = final fragment alpha < 1.0; this can happen usually because
+    /     - model has transparent material
+    /     - model has transparent texture
+    /   -> when updating material or texture, check alpha and set to TRUE when needed
+    */
+    bool transparent{ false };
+
     /*Model(const std::filesystem::path& filename, ShaderProgram& shader) { //for triangle
         loadOBJFile(filename, shader);  // Load mesh data from the OBJ file
     }*/
@@ -144,6 +152,10 @@ public:
             mesh.draw(local_model_matrix * model_matrix);  // do not forget to implement...
         }
     }
+
+
+
+    
 
 
 private:

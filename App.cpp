@@ -93,8 +93,14 @@ bool App::init()
         glfwSetScrollCallback(window, scroll_callback);             // On mouse wheel.
         glfwSetCursorPosCallback(window, cursor_position_callback);
 
+        //init_assets("resources"); // transparent and non-transparent models
 
         init_assets();
+
+        //transparency blending function
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //glDepthFunc(GL_LEQUAL);
+
     }
     catch (std::exception const& e) {
         std::cerr << "Init failed : " << e.what() << std::endl;
@@ -112,17 +118,22 @@ void App::init_assets(void) {
     //SHADERS - define & compile & link
     my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
 
-    std::filesystem::path texture_file_path = "./resources/textures/my_tex.png";
+    std::filesystem::path texture_file_path = "./resources/textures/box_rgb888.png";
 
     Model my_model = Model("resources/objects/cube_triangles_vnt.obj", my_shader, texture_file_path);
-    //my_model.origin.x = 0.3;
+    //Model my_model = Model("resources/objects/bunny_tri_vnt.obj", my_shader, texture_file_path);
+    
+    //Model transp_model = Model("resources/objects/bunny_tri_vnt.obj", my_shader, "./resources/textures/my_tex.png");
+    Model transp_model = Model("resources/objects/floor.obj", my_shader, "./resources/textures/blue_glass_tex.png");
+    transp_model.transparent = true;
+    transp_model.origin.y = -0.5;
 
     /*Model temp_model = Model("resources/objects/triangle.obj", my_shader);
     temp_model.origin.x = 2;
     scene.try_emplace("triangle", temp_model);
     temp_model.origin.x = 4;
     scene.try_emplace("triangle2", temp_model);*/
-    
+    scene.try_emplace("bunny", transp_model);
     //scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
     scene.insert({ "my_first_object", my_model });
     //scene.insert("my_first_object", my_model);
@@ -177,6 +188,8 @@ int App::run(void)
 
         float lastFrameTime = static_cast<float>(glfwGetTime()); // Store the time of the last frame
 
+        float speed = 5;
+
         while (!glfwWindowShouldClose(window))
         {
             
@@ -187,7 +200,13 @@ int App::run(void)
             float currentFrameTime = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrameTime - lastFrameTime; // Time difference
             lastFrameTime = currentFrameTime; // Update lastFrameTime
-            camera.Position += camera.ProcessInput(window, deltaTime);
+            
+            std::vector<Model*> transparent;    // temporary, vector of pointers to transparent objects
+            transparent.reserve(scene.size());  // reserve size for all objects to avoid reallocation
+
+            
+            
+            camera.Position += camera.ProcessInput(window, deltaTime*speed);
 
 
             scene.at("my_first_object").origin.x = 0.3 * sin(glfwGetTime());
@@ -212,15 +231,37 @@ int App::run(void)
 
             glUniform4f(uniform_color_location, r, g, b, a);
 
-            /*for (auto const& model : scene) {
-                model.draw();
-            }*/
-            for (auto& [key, value] : scene) {
+            //draw all non-transparent in any order
+            for (auto& [name, model] : scene) {
                 //value.draw(my_shader);
-                value.draw();
+                if (!model.transparent)
+                    model.draw();
+                else
+                    transparent.emplace_back(&model); // save pointer for painters algorithm
+            }
+             
+            //draw only transparent - painter's algorithm (sort by distance from camera, from far to near)
+            std::sort(transparent.begin(), transparent.end(), [&](Model const* a, Model const* b) {
+                glm::vec3 translation_a = glm::vec3(a->local_model_matrix[3]);  // get 3 values from last column of model matrix = translation
+                glm::vec3 translation_b = glm::vec3(b->local_model_matrix[3]);  // dtto for model B
+                return glm::distance(camera.Position, translation_a) < glm::distance(camera.Position, translation_b); // sort by distance from camera
+            });
+
+
+            // set GL for transparent objects
+            // TODO: from lectures
+            glEnable(GL_BLEND);
+            glDepthMask(GL_FALSE);
+            glDisable(GL_CULL_FACE);
+
+            // draw sorted transparent
+            for (auto p : transparent) {
+                p->draw();
             }
 
-            //scene.at("triangle").draw();
+            glDisable(GL_BLEND);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_CULL_FACE);
 
             // Poll for and process events
             //glfwPollEvents();
@@ -268,72 +309,9 @@ void App::update_projection_matrix(/*void*/GLFWwindow* window)
         glm::radians(this_inst->fov),   // The vertical Field of View, in radians: the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
         ratio,               // Aspect Ratio. Depends on the size of your window.
         0.1f,                // Near clipping plane. Keep as big as possible, or you'll get precision issues.
-        10.0f             // 20000.0f Far clipping plane. Keep as little as possible.
+        100.0f             // 20000.0f Far clipping plane. Keep as little as possible.
     );
 }
-
-GLuint App::textureInit(const std::filesystem::path& file_name)
-{
-    cv::Mat image = cv::imread(file_name.string(), cv::IMREAD_UNCHANGED);  // Read with (potential) Alpha
-    if (image.empty()) {
-        throw std::runtime_error("No texture in file: " + file_name.string());
-    }
-
-    // or print warning, and generate synthetic image with checkerboard pattern 
-    // using OpenCV and use as a texture replacement 
-
-    GLuint texture = gen_tex(image);
-
-    return texture;
-}
-
-GLuint App::gen_tex(cv::Mat& image)
-{
-    GLuint ID = 0;
-
-    if (image.empty()) {
-        throw std::runtime_error("Image empty?\n");
-    }
-
-    // Generates an OpenGL texture object
-    glCreateTextures(GL_TEXTURE_2D, 1, &ID);
-
-    switch (image.channels()) {
-    case 3:
-        // Create and clear space for data - immutable format
-        glTextureStorage2D(ID, 1, GL_RGB8, image.cols, image.rows);
-        // Assigns the image to the OpenGL Texture object
-        glTextureSubImage2D(ID, 0, 0, 0, image.cols, image.rows, GL_BGR, GL_UNSIGNED_BYTE, image.data);
-        break;
-    case 4:
-        glTextureStorage2D(ID, 1, GL_RGBA8, image.cols, image.rows);
-        glTextureSubImage2D(ID, 0, 0, 0, image.cols, image.rows, GL_BGRA, GL_UNSIGNED_BYTE, image.data);
-        break;
-    default:
-        throw std::runtime_error("unsupported channel cnt. in texture:" + std::to_string(image.channels()));
-    }
-
-    // Configures the type of algorithm that is used to make the image smaller or bigger
-    // nearest neighbor - ugly & fast 
-    //glTextureParameteri(ID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  
-    //glTextureParameteri(ID, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // bilinear - nicer & slower
-    //glTextureParameteri(ID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);    
-    //glTextureParameteri(ID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    // MIPMAP filtering + automatic MIPMAP generation - nicest, needs more memory. Notice: MIPMAP is only for image minifying.
-    glTextureParameteri(ID, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // bilinear magnifying
-    glTextureParameteri(ID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear minifying
-    glGenerateTextureMipmap(ID);  //Generate mipmaps now.
-
-    // Configures the way the texture repeats
-    glTextureParameteri(ID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(ID, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    return ID;
-}
-
 
 App::~App()
 {
