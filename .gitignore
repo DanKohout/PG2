@@ -26,6 +26,7 @@
 *.rsp
 *.sbr
 *.o
+*.rdc
 
 
 # Build directories

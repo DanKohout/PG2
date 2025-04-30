@@ -69,6 +69,8 @@ bool App::init()
         }
         wglewInit();
 
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
         //glDebugMessageCallback(MessageCallback, 0);
         //glEnable(GL_DEBUG_OUTPUT);
         // initialization code
@@ -121,8 +123,11 @@ void App::init_assets(void) {
     std::filesystem::path texture_file_path = "./resources/textures/box_rgb888.png";
 
     Model my_model = Model("resources/objects/cube_triangles_vnt.obj", my_shader, texture_file_path);
-    //Model my_model = Model("resources/objects/bunny_tri_vnt.obj", my_shader, texture_file_path);
-    
+
+    Model model_bunny = Model("resources/objects/bunny_tri_vnt.obj", my_shader, "./resources/textures/box_rgb888.png");
+    model_bunny.origin.y = -10.0;
+
+
     //Model transp_model = Model("resources/objects/bunny_tri_vnt.obj", my_shader, "./resources/textures/my_tex.png");
     Model transp_model = Model("resources/objects/floor.obj", my_shader, "./resources/textures/blue_glass_tex.png");
     transp_model.transparent = true;
@@ -134,6 +139,7 @@ void App::init_assets(void) {
     temp_model.origin.x = 4;
     scene.try_emplace("triangle2", temp_model);*/
     scene.try_emplace("bunny", transp_model);
+    scene.try_emplace("model_bunny", model_bunny);
     //scene.insert(std::make_pair("my_first_object", my_model));//???->probably wrong
     scene.insert({ "my_first_object", my_model });
     //scene.insert("my_first_object", my_model);
@@ -230,7 +236,36 @@ int App::run(void)
             //b = static_cast<float>((sin(time * 0.5) + 1) / 2);
 
             glUniform4f(uniform_color_location, r, g, b, a);
+            my_shader.setUniform("light_position", glm::vec3(30.0f, 40.0f, 30.0f));
 
+            my_shader.setUniform("ambient_intensity", glm::vec3(0.2f, 0.2f, 0.2f));
+            my_shader.setUniform("diffuse_intensity", glm::vec3(0.8f, 0.8f, 0.8f));
+            my_shader.setUniform("specular_intensity", glm::vec3(0.5f, 0.5f, 0.5f));
+
+            my_shader.setUniform("ambient_material", glm::vec3(0.8f, 0.8f, 0.8f));
+            my_shader.setUniform("diffuse_material", glm::vec3(0.5f, 0.5f, 0.5f));
+            my_shader.setUniform("specular_material", glm::vec3(1.0f, 1.0f, 1.0f));
+
+            my_shader.setUniform("specular_shinines", 5.0f);
+
+
+            /*
+            my_shader.setUniform("spot_position", glm::vec3(0.0f, 0.0f, 0.0f));
+            my_shader.setUniform("spot_direction", glm::vec3(0.0f, 0.0f, -1.0f));
+            my_shader.setUniform("spot_cutoff", cos(glm::radians(12.5f)));
+            my_shader.setUniform("spot_outer_cutoff", cos(glm::radians(17.5f)));
+            */
+            // Assuming you're using glm
+            /*my_shader.setUniform("spot_position", glm::vec3(0.0f)); // camera position in view space
+            my_shader.setUniform("spot_direction", glm::vec3(0.0f, 0.0f, -1.0f)); // forward
+            my_shader.setUniform("spot_cutoff_cos", glm::cos(glm::radians(12.5f)));
+            my_shader.setUniform("spot_exponent", 10.0f); // how focused the light cone is
+
+            // Attenuation factors
+            my_shader.setUniform("constant_att", 1.0f);
+            my_shader.setUniform("linear_att", 0.09f);
+            my_shader.setUniform("quad_att", 0.032f);
+            */
             //draw all non-transparent in any order
             for (auto& [name, model] : scene) {
                 //value.draw(my_shader);
