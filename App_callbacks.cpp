@@ -77,16 +77,12 @@ void App::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 
 void App::fbsize_callback(GLFWwindow* window, int width, int height)
 {
-    auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
-    this_inst->width = width;
-    this_inst->height = height;
-
-    // set viewport
-    glViewport(0, 0, width, height);
-    //now your canvas has [0,0] in bottom left corner, and its size is [width x height] 
-
-    this_inst->update_projection_matrix(window);
-};
+    auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    app->width = width;
+    app->height = height;
+    glViewport(0, 0, width, height);              // nastaví viewport na novou velikost okna
+    app->update_projection_matrix(window);        // pøepoèítá perspektivní projekci
+}
 
 
 

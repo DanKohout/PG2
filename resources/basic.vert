@@ -1,4 +1,4 @@
-#version 460 core
+﻿#version 460 core
 
 // input vertex attributes
 
@@ -12,7 +12,9 @@ out vec3 normal;
 out vec2 texcoord;
 
 // Light properties
-uniform vec3 light_position;
+uniform vec3 light_direction; 
+
+
 
 out VS_OUT
 {
@@ -21,8 +23,6 @@ out VS_OUT
     vec3 V;//view vector?
     vec2 texcoord;
 } vs_out;
-
-
 
 uniform sampler2D tex0; // texture unit from C++
 
@@ -33,7 +33,7 @@ uniform mat4 uP_m = mat4(1.0); // Projection transformation matrix
 uniform mat4 uM_m = mat4(1.0);
 uniform mat4 uV_m = mat4(1.0); // View (camera) transformation matrix
 
-
+uniform float tex_scale = 1.0f; // škálování texturovacích souřadnic (opakování textury)
 
 void main()
 {
@@ -48,7 +48,6 @@ void main()
     //normal = mat3(transpose(inverse(modelM))) * aNormal; // Normal correction for non-uniform scaling
     //texcoord = aTexCoords;//TODO
     
-    
     // Create Model-View matrix
     mat4 mv_m = uV_m * uM_m;
     // Calculate view-space coordinate - in P point 
@@ -58,14 +57,14 @@ void main()
     // Calculate normal in view space
     vs_out.N = mat3(mv_m) * aNormal;
      // Calculate view-space light vector
-    vs_out.L = vec3(uV_m*vec4(light_position, 1.0f)) - P.xyz;
+    vs_out.L = normalize(mat3(uV_m) * -light_direction); // světlo má směr, ne pozici
     // Calculate view vector (negative of the view-space position)
     vs_out.V = -P.xyz;
 
     //gl_Position = uP_m * P;
     //gl_Position = uP_m * uV_m * uM_m * vec4(aPos, 1.0f);
     
-    vs_out.texcoord = aTexCoords;
+    vs_out.texcoord = aTexCoords * tex_scale; // nasobeni opakovani textury
 
     color = /*aColor*/vec3(1.0f) * uniform_color.rgb; // copy color to output
 }

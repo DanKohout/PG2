@@ -3,29 +3,23 @@
 #include <chrono>
 #include <stack>
 #include <random>
+#include <unordered_map>
+#include <filesystem>
+#include <opencv2/opencv.hpp>
 
-
-// OpenCV (does not depend on GL)
-#include <opencv2\opencv.hpp>
-
-// OpenGL Extension Wrangler: allow all multiplatform GL functions
-#include <GL/glew.h> 
-// WGLEW = Windows GL Extension Wrangler (change for different platform) 
-// platform specific functions (in this case Windows)
-#include <GL/wglew.h> 
-
-// GLFW toolkit
-// Uses GL calls to open GL context, i.e. GLEW __MUST__ be first.
+// OpenGL
+#include <GL/glew.h>
+#include <GL/wglew.h>
 #include <GLFW/glfw3.h>
 
-// OpenGL math (and other additional GL libraries, at the end)
+// GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 #include "gl_err_callback.hpp"
 #include "assets.hpp"
 #include "ShaderProgram.hpp"
 #include "Model.hpp"
-
 #include "camera.hpp"
 
 class App {
@@ -34,23 +28,22 @@ public:
 
     bool init(void);
     int run(void);
-
     ~App();
 
-    
+    void GetInformation(void);
+    void update_projection_matrix(GLFWwindow* window);
 
-    
+    // === Maze ===
+    uchar getmap(cv::Mat& map, int x, int y);         // Pøístup do mapy
+    void genLabyrinth(cv::Mat& map);                  // Generování bludištì
+
 private:
-
     static bool vsyncEnabled;
-
+    static Camera camera;
 
     GLFWwindow* window = NULL;
+    ShaderProgram my_shader;
 
-    static Camera camera;
-    //glm::vec3 camera_movement{};
-
-    void GetInformation(void);
     void init_assets(void);
 
     static void error_callback(int error, const char* description);
@@ -60,26 +53,20 @@ private:
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
     static void fbsize_callback(GLFWwindow* window, int width, int height);
-    static void update_projection_matrix(GLFWwindow* window);
-    
-    ShaderProgram my_shader;
 
-    GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 
     GLuint textureInit(const std::filesystem::path& file_name);
     GLuint gen_tex(cv::Mat& image);
 
 protected:
-    // projection related variables    
+    // projection
     int width{ 0 }, height{ 0 };
     float fov = 60.0f;
-    // store projection matrix here, update only on callbacks
     glm::mat4 projection_matrix = glm::identity<glm::mat4>();
 
-
-
-    // all objects of the scene
+    // scene data
     std::unordered_map<std::string, Model> scene;
-    
 
+    // color
+    GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 };
