@@ -41,6 +41,11 @@ private:
     static bool vsyncEnabled;
     static Camera camera;
 
+    bool showHUD = false;
+    bool flashlightOn = false;
+    bool noclipEnabled = false; // režim chùze výchozí
+    bool isPositionBlocked(glm::vec3 position); // funkce pro kolize
+
     GLFWwindow* window = NULL;
     ShaderProgram my_shader;
 
@@ -53,6 +58,10 @@ private:
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
     static void fbsize_callback(GLFWwindow* window, int width, int height);
+    void drawText(const std::string& text, float x, float y);
+
+    
+
 
 
     GLuint textureInit(const std::filesystem::path& file_name);

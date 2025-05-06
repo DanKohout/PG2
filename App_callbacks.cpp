@@ -38,6 +38,19 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
         else
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // Lock and hide cursor
     }
+    else if (key == GLFW_KEY_F3 && action == GLFW_PRESS) {
+        auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
+        app->noclipEnabled = !app->noclipEnabled;
+        std::cout << (app->noclipEnabled ? "Noclip ON\n" : "Noclip OFF\n");
+    }
+    else if (key == GLFW_KEY_F2 && action == GLFW_PRESS) {
+        auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
+        app->showHUD = !app->showHUD;
+        std::cout << "HUD " << (app->showHUD ? "enabled\n" : "disabled\n");
+    }
+
+
+
 }
 
 void App::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -84,7 +97,13 @@ void App::fbsize_callback(GLFWwindow* window, int width, int height)
     app->update_projection_matrix(window);        // pøepoèítá perspektivní projekci
 }
 
-
-
-
-
+void App::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+        if (app) {
+            app->flashlightOn = !app->flashlightOn;
+            std::cout << "Flashlight toggled: " << (app->flashlightOn ? "ON" : "OFF") << std::endl;
+        }
+    }
+}

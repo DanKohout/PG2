@@ -39,6 +39,8 @@ public:
         loadOBJFile(filename, shader);  // Load mesh data from the OBJ file
     }*/
 
+	Model() = default; //default constructor
+
     //NO TEXTURE
     Model(const std::filesystem::path& filename, ShaderProgram& shader) { //NO TEXTURE
         std::string outfilename_str = filename.string(); // or outfilename.u8string()

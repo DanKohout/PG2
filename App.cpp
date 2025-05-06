@@ -3,6 +3,9 @@
 
 #include "app.hpp"
 #include "assets.hpp"
+
+
+
 cv::Mat mapa;
 
 const int maze_width = 25;
@@ -100,6 +103,8 @@ bool App::init()
         glfwSetFramebufferSizeCallback(window, fbsize_callback);    // On GL framebuffer resize callback.
         glfwSetScrollCallback(window, scroll_callback);             // On mouse wheel.
         glfwSetCursorPosCallback(window, cursor_position_callback);
+        glfwSetMouseButtonCallback(window, mouse_button_callback);
+
 
 		mapa = cv::Mat(maze_width, maze_depth, CV_8U); // velikost bludištì
 		genLabyrinth(mapa);
@@ -148,6 +153,7 @@ void App::init_assets(void) {
     world_floor.transparent = false;
     world_floor.origin = glm::vec3(0.0f, 0.0f, 0.0f);
     world_floor.scale = glm::vec3(2.0f, 1.0f, 2.0f);
+    
     scene.try_emplace("world_floor", world_floor);
 
     //
@@ -156,19 +162,19 @@ void App::init_assets(void) {
     Model model_bunny = Model("resources/objects/bunny_tri_vnt.obj", my_shader, "./resources/textures/box_rgb888.png");
     model_bunny.origin.y = -10.0f;
     scene.try_emplace("bunny", model_bunny);
-    /*
+    
     // SLUNÍÈKO – viditelný zdroj svìtla
     Model sun = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "resources/textures/sun_texture.png");
     sun.transparent = false;
     sun.origin = glm::vec3(-4.0f, 6.0f, -4.0f);  // stejný smìr jako pùvodní svìtlo
     sun.scale = glm::vec3(0.8f);                // zmenšení
     scene.try_emplace("sun_object", sun);
-    */
 
     //
     // TESTOVACÍ KOSTKA
     //
     Model my_model = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "./resources/textures/box_rgb888.png");
+    my_model.origin.y = 0.5f;
     scene.insert({ "my_first_object", my_model });
 
     //
@@ -186,6 +192,7 @@ void App::init_assets(void) {
             glm::vec3 base_pos = glm::vec3(x * cell_size_x + offset_x, 0.0f, y * cell_size_z + offset_z);
 
             if (cell == '#') {
+
                 for (int h = 0; h < static_cast<int>(wall_height); ++h) {
                     Model wall = wall_template;
                     wall.origin = base_pos + glm::vec3(0.0f, h * block_height + block_height / 2.0f, 0.0f);
@@ -205,136 +212,100 @@ void App::init_assets(void) {
 }
 
 
-
 int App::run(void)
 {
     try {
-        //GLfloat r, g, b, a;
         r = g = b = 0.7f; a = 1.0f;
-        glm::vec4 my_rgba = { r,g,b,a };// ???-> dont know if it should be like this
-        glm::vec3 rgb = { r,g,b };
-        //glUseProgram(shader_prog_ID);;
+        glm::vec4 my_rgba = { r,g,b,a };
         my_shader.activate();
-        // ... shader MUST be active to set its uniforms!
-        //my_shader.setUniform("color", rgb);
         my_shader.setUniform("uniform_color", my_rgba);
 
-        GLint activeProgram = 0;
-        glGetIntegerv(GL_CURRENT_PROGRAM, &activeProgram);
-        std::cout << "Active Shader Program: " << activeProgram << std::endl;
-
-        GLint uniform_color_location = glGetUniformLocation(my_shader.ID/*shader_prog_ID*/, "uniform_color");
-        if (uniform_color_location == -1) {
-            std::cerr << "Uniform location is not found in active shader program. Did you forget to activate it?\n";
-        }
-  
-        glfwGetFramebufferSize(window, &width, &height);    // Get GL framebuffer size	
-
+        glfwGetFramebufferSize(window, &width, &height);
         update_projection_matrix(window);
-       
-        //set uniform for shaders - projection matrix
         my_shader.setUniform("uP_m", projection_matrix);
-        
-      
-
-        
-
-        //
-        // set viewport
-        //
-        //glViewport(0, 0, width, height);
-        
-        camera.Position = glm::vec3(-0.3f, 0.0f, 0.0f);
 
         double fps_counter_seconds = 0;
         int fps_counter_frames = 0;
-
-        float lastFrameTime = static_cast<float>(glfwGetTime()); // Store the time of the last frame
-
-        float speed = 5;
+        float lastFrameTime = static_cast<float>(glfwGetTime());
+        float speed = 5.0f;
 
         while (!glfwWindowShouldClose(window))
         {
-            
-            // Time/FPS measure start
             auto fps_frame_start_timestamp = std::chrono::steady_clock::now();
-
-            //camera timing
             float currentFrameTime = static_cast<float>(glfwGetTime());
-            float deltaTime = currentFrameTime - lastFrameTime; // Time difference
-            lastFrameTime = currentFrameTime; // Update lastFrameTime
-            
-            std::vector<Model*> transparent;    // temporary, vector of pointers to transparent objects
-            transparent.reserve(scene.size());  // reserve size for all objects to avoid reallocation
+            float deltaTime = currentFrameTime - lastFrameTime;
+            lastFrameTime = currentFrameTime;
 
-            
-            
-            camera.Position += camera.ProcessInput(window, deltaTime*speed);
+            std::vector<Model*> transparent;
+            transparent.reserve(scene.size());
+
+            // === POHYB KAMERY S KOLIZÍ ===
+            glm::vec3 movement = camera.ProcessInput(window, deltaTime * speed);
+            if (!noclipEnabled) movement.y = 0.0f;
+            glm::vec3 new_pos = camera.Position + movement;
+
+            if (noclipEnabled || !isPositionBlocked(new_pos)) {
+                camera.Position = new_pos;
+            }
+            if (!noclipEnabled) {
+                camera.Position.y = 1.0f;
+            }
+
+            // === Animace pohybu pro "my_first_object" (sem a tam) ===
+            if (scene.find("my_first_object") != scene.end()) {
+                auto& model = scene.at("my_first_object");
+
+                float amplitude = 2.0f; // kolik se pohybuje doleva a doprava
+                float speed = 1.0f;     // rychlost oscilace
+                float offset = sin(currentFrameTime * speed) * amplitude;
+
+                glm::vec3 moved_origin = model.origin;
+                moved_origin.x += offset;
+
+                model.local_model_matrix = glm::translate(glm::mat4(1.0f), moved_origin);
+                model.local_model_matrix = glm::scale(model.local_model_matrix, model.scale);
+            }
 
 
-            scene.at("my_first_object").origin.x = 0.3 * sin(glfwGetTime());
-            scene.at("bunny").orientation.y += deltaTime * 5.0f;  // 180 stupòù za sekundu
+            // === Animace králíka kolem osy Y ===
+            if (scene.find("bunny") != scene.end()) {
+                auto& bunny = scene.at("bunny");
+                bunny.local_model_matrix = glm::translate(glm::mat4(1.0f), bunny.origin);
+                bunny.local_model_matrix = glm::rotate(bunny.local_model_matrix, currentFrameTime, glm::vec3(0, 1, 0));
+            }
 
 
+            // === SLUNEÈNÍ CYKLUS ===
+            float angle = (currentFrameTime / 120.0f) * glm::two_pi<float>();
+            float radius = 60.0f;
+            glm::vec3 center(0.0f);
+            glm::vec3 sun_pos = {
+                center.x + radius * cos(angle),
+                20.0f * sin(angle),
+                center.z + radius * sin(angle)
+            };
+            scene.at("sun_object").origin = sun_pos;
 
+            float brightness = glm::clamp((sun_pos.y + 5.0f) / 10.0f, 0.15f, 1.0f);
+            glm::vec3 light_dir = glm::normalize(glm::vec3(0.0f) - sun_pos);
+            my_shader.setUniform("light_direction", light_dir);
 
-            glm::mat4 v_m = camera.GetViewMatrix();
-
-            // set uniforms for shader - common for all objects (do not set for each object individually, they use same shader anyway)
-            my_shader.setUniform("uV_m", v_m);
-            //my_shader.setUniform("uP_m", projection_matrix);
-
-            //my_shader.setUniform("uniform_color", glm::vec4(glm::sin(float(glfwGetTime()))),g,b,a)); -> postupne menici cervena
-            glClearColor(0.85f, 0.90f, 1.0f, 1.0f); // svìtle modrá
-            // Clear OpenGL canvas, both color buffer and Z-buffer
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            
-            // Dynamically change color based on time
-            //double time = glfwGetTime();
-            //r = static_cast<float>((sin(time) + 1) / 2);
-            //g = static_cast<float>((cos(time) + 1) / 2);
-            //b = static_cast<float>((sin(time * 0.5) + 1) / 2);
-
-            glUniform4f(uniform_color_location, r, g, b, a);
-            my_shader.setUniform("light_direction", glm::normalize(glm::vec3(-1.0f, -1.0f, -0.3f)));
-
-            my_shader.setUniform("ambient_intensity", glm::vec3(0.2f, 0.2f, 0.2f));
-            my_shader.setUniform("diffuse_intensity", glm::vec3(0.8f, 0.8f, 0.8f));
-            my_shader.setUniform("specular_intensity", glm::vec3(0.5f, 0.5f, 0.5f));
-
-            my_shader.setUniform("ambient_material", glm::vec3(0.8f, 0.8f, 0.8f));
-            my_shader.setUniform("diffuse_material", glm::vec3(0.5f, 0.5f, 0.5f));
-            my_shader.setUniform("specular_material", glm::vec3(1.0f, 1.0f, 1.0f));
-
+            my_shader.setUniform("ambient_intensity", glm::vec3(0.2f) * brightness);
+            my_shader.setUniform("diffuse_intensity", glm::vec3(0.8f) * brightness);
+            my_shader.setUniform("specular_intensity", glm::vec3(0.5f) * brightness);
+            my_shader.setUniform("ambient_material", glm::vec3(0.8f));
+            my_shader.setUniform("diffuse_material", glm::vec3(0.5f));
+            my_shader.setUniform("specular_material", glm::vec3(1.0f));
             my_shader.setUniform("specular_shinines", 5.0f);
 
+            my_shader.setUniform("uV_m", camera.GetViewMatrix());
 
-            /*
-            my_shader.setUniform("spot_position", glm::vec3(0.0f, 0.0f, 0.0f));
-            my_shader.setUniform("spot_direction", glm::vec3(0.0f, 0.0f, -1.0f));
-            my_shader.setUniform("spot_cutoff", cos(glm::radians(12.5f)));
-            my_shader.setUniform("spot_outer_cutoff", cos(glm::radians(17.5f)));
-            */
-            // Assuming you're using glm
-            /*my_shader.setUniform("spot_position", glm::vec3(0.0f)); // camera position in view space
-            my_shader.setUniform("spot_direction", glm::vec3(0.0f, 0.0f, -1.0f)); // forward
-            my_shader.setUniform("spot_cutoff_cos", glm::cos(glm::radians(12.5f)));
-            my_shader.setUniform("spot_exponent", 10.0f); // how focused the light cone is
+            glClearColor(0.85f * brightness, 0.9f * brightness, 1.0f * brightness, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // Attenuation factors
-            my_shader.setUniform("constant_att", 1.0f);
-            my_shader.setUniform("linear_att", 0.09f);
-            my_shader.setUniform("quad_att", 0.032f);
-            */
-            //printí to jak jpgèka, tak pngèka
             for (auto& [name, model] : scene) {
                 if (!model.transparent) {
-                    // Pokud je to podlaha, použij vìtší tex_scale
-                    if (name == "world_floor")
-                        my_shader.setUniform("tex_scale", 20.0f);
-                    else
-                        my_shader.setUniform("tex_scale", 1.0f); // normální opakování pro ostatní
-
+                    my_shader.setUniform("tex_scale", (name == "world_floor") ? 20.0f : 1.0f);
                     model.draw();
                 }
                 else {
@@ -342,52 +313,43 @@ int App::run(void)
                 }
             }
 
-             
-            //draw only transparent - painter's algorithm (sort by distance from camera, from far to near)
             std::sort(transparent.begin(), transparent.end(), [&](Model const* a, Model const* b) {
-                glm::vec3 translation_a = glm::vec3(a->local_model_matrix[3]);  // get 3 values from last column of model matrix = translation
-                glm::vec3 translation_b = glm::vec3(b->local_model_matrix[3]);  // dtto for model B
-                return glm::distance(camera.Position, translation_a) < glm::distance(camera.Position, translation_b); // sort by distance from camera
-            });
+                glm::vec3 ta = glm::vec3(a->local_model_matrix[3]);
+                glm::vec3 tb = glm::vec3(b->local_model_matrix[3]);
+                return glm::distance(camera.Position, ta) < glm::distance(camera.Position, tb);
+                });
 
-
-            // set GL for transparent objects
-            // TODO: from lectures
             glEnable(GL_BLEND);
             glDepthMask(GL_FALSE);
             glDisable(GL_CULL_FACE);
-
-            // draw sorted transparent
-            for (auto p : transparent) {
-                p->draw();
-            }
-
+            for (auto p : transparent) p->draw();
             glDisable(GL_BLEND);
             glDepthMask(GL_TRUE);
-            glEnable(GL_CULL_FACE);
-
-            // Poll for and process events
-            //glfwPollEvents();
-
-            // Swap front and back buffers
-            glfwSwapBuffers(window);
-            //glfwSwapBuffers(globals.window);
-
-            // Poll for and process events
-            glfwPollEvents();
-
-            auto fps_frame_end_timestamp = std::chrono::steady_clock::now();
-            std::chrono::duration<double> fps_elapsed_seconds = fps_frame_end_timestamp - fps_frame_start_timestamp;
-            fps_counter_seconds += fps_elapsed_seconds.count();
-            fps_counter_frames++;
+            //glEnable(GL_CULL_FACE);
+            
+			// === HUD ===
             if (fps_counter_seconds >= 1) {
-                //std::cout << fps_counter_frames << " FPS\n";
                 std::stringstream ss;
-                ss << fps_counter_frames << " FPS";
+                ss << "FPS: " << fps_counter_frames
+                    << " | Flashlight: " << (flashlightOn ? "ON" : "OFF")
+                    << " | VSync: " << (vsyncEnabled ? "ON" : "OFF")
+                    << " | HUD: " << (showHUD ? "ON" : "OFF");
+
                 glfwSetWindowTitle(window, ss.str().c_str());
                 fps_counter_seconds = 0;
                 fps_counter_frames = 0;
             }
+            
+
+
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+
+            auto fps_frame_end_timestamp = std::chrono::steady_clock::now();
+            fps_counter_seconds += std::chrono::duration<double>(fps_frame_end_timestamp - fps_frame_start_timestamp).count();
+            fps_counter_frames++;
+
         }
     }
     catch (std::exception const& e) {
@@ -398,6 +360,9 @@ int App::run(void)
     std::cout << "Finished OK...\n";
     return EXIT_SUCCESS;
 }
+
+
+
 
 
 
@@ -525,4 +490,36 @@ void App::genLabyrinth(cv::Mat& map) {
     camera.Position.y = 1.0f;
 }
 
+bool App::isPositionBlocked(glm::vec3 pos)
+{
+    float player_radius = 0.3f;
+    float player_height = 1.8f;
+    float half_height = player_height / 2.0f;
+
+    glm::vec3 player_min = pos - glm::vec3(player_radius, half_height, player_radius);
+    glm::vec3 player_max = pos + glm::vec3(player_radius, half_height, player_radius);
+
+    for (const auto& [name, model] : scene)
+    {
+        if (
+            name.rfind("wall_", 0) == 0 || // všechny zdi
+            name == "goal_cube" ||         // cílová kostka
+            name == "my_first_object"      // rotující kostka
+            )
+        {
+            glm::vec3 min = model.origin - model.scale * 0.5f;
+            glm::vec3 max = model.origin + model.scale * 0.5f;
+
+            // AABB-AABB kolize
+            bool x_overlap = (player_max.x >= min.x && player_min.x <= max.x);
+            bool y_overlap = (player_max.y >= min.y && player_min.y <= max.y);
+            bool z_overlap = (player_max.z >= min.z && player_min.z <= max.z);
+
+            if (x_overlap && y_overlap && z_overlap)
+                return true;
+        }
+    }
+
+    return false;
+}
 
