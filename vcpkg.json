@@ -1,8 +1,14 @@
 {
+  "name": "pg2-project",
+  "version": "1.0.0",
   "dependencies": [
     "glew",
     "glfw3",
     "glm",
-    "nlohmann-json"
+    "nlohmann-json",
+    {
+      "name": "imgui",
+      "features": [ "docking-experimental", "glfw-binding", "opengl3-binding" ]
+    }
   ]
 }

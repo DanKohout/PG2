@@ -22,6 +22,12 @@
 #include "Model.hpp"
 #include "camera.hpp"
 
+// vypisování HUDu
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
+
 class App {
 public:
     App();
@@ -36,6 +42,8 @@ public:
     // === Maze ===
     uchar getmap(cv::Mat& map, int x, int y);         // Pøístup do mapy
     void genLabyrinth(cv::Mat& map);                  // Generování bludištì
+
+
 
 private:
     static bool vsyncEnabled;

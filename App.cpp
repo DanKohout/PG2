@@ -4,6 +4,12 @@
 #include "app.hpp"
 #include "assets.hpp"
 
+// vypisování HUDu
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
+
 
 
 cv::Mat mapa;
@@ -116,6 +122,21 @@ bool App::init()
         //transparency blending function
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         //glDepthFunc(GL_LEQUAL);
+
+
+        // HUD
+        // === ImGui Init ===
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+        // Mùžeš zapnout styl
+        ImGui::StyleColorsDark();
+
+        // Pøiøazení backends
+        ImGui_ImplGlfw_InitForOpenGL(window, true);
+        ImGui_ImplOpenGL3_Init("#version 460");
+
 
     }
     catch (std::exception const& e) {
@@ -327,18 +348,28 @@ int App::run(void)
             glDepthMask(GL_TRUE);
             //glEnable(GL_CULL_FACE);
             
-			// === HUD ===
-            if (fps_counter_seconds >= 1) {
-                std::stringstream ss;
-                ss << "FPS: " << fps_counter_frames
-                    << " | Flashlight: " << (flashlightOn ? "ON" : "OFF")
-                    << " | VSync: " << (vsyncEnabled ? "ON" : "OFF")
-                    << " | HUD: " << (showHUD ? "ON" : "OFF");
+            // === ImGui Frame Begin ===
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
 
-                glfwSetWindowTitle(window, ss.str().c_str());
-                fps_counter_seconds = 0;
-                fps_counter_frames = 0;
+            if (showHUD) {
+                ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+                ImGui::SetNextWindowBgAlpha(0.4f);  // Prùhledné pozadí
+                ImGui::Begin("HUD", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::Text("FPS: %d", fps_counter_frames);
+                ImGui::Text("VSync: %s", vsyncEnabled ? "ON" : "OFF");
+				ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)", camera.Position.x, camera.Position.y, camera.Position.z);
+				ImGui::Text("NoClip: %s", noclipEnabled ? "ON" : "OFF");
+                ImGui::Text("Flashlight: %s", flashlightOn ? "ON" : "OFF");
+                
+                ImGui::End();
             }
+
+            // === ImGui Render ===
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
             
 
 
@@ -394,6 +425,11 @@ App::~App()
     // clean-up
     cv::destroyAllWindows();
     std::cout << "Bye...\n";
+    // === ImGui Shutdown ===
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
 }
 
 void App::GetInformation() {
