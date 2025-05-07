@@ -42,6 +42,9 @@ public:
     // === Maze ===
     uchar getmap(cv::Mat& map, int x, int y);         // Pøístup do mapy
     void genLabyrinth(cv::Mat& map);                  // Generování bludištì
+    bool isJumping = false;
+    float jumpVelocity = 0.0f;
+
 
 
 
@@ -67,6 +70,8 @@ private:
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
     static void fbsize_callback(GLFWwindow* window, int width, int height);
     void drawText(const std::string& text, float x, float y);
+    void toggleVsync();
+
 
     
 

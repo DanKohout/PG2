@@ -12,13 +12,11 @@ void App::error_callback(int error, const char* description)
 void App::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-
+    }
     else if (key == GLFW_KEY_F4 && action == GLFW_PRESS) {
-        // Prepnutí stavu VSync
-        vsyncEnabled = !vsyncEnabled;
-        glfwSwapInterval(vsyncEnabled ? 1 : 0);
+        this_inst->toggleVsync();
     }
     else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         this_inst->r = (this_inst->r >= 1.0f) ? 0.0f : this_inst->r + 0.1f;
@@ -48,6 +46,14 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
         app->showHUD = !app->showHUD;
         std::cout << "HUD " << (app->showHUD ? "enabled\n" : "disabled\n");
     }
+    else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
+        if (!app->noclipEnabled && !app->isJumping) {
+            app->isJumping = true;
+            app->jumpVelocity = 5.0f; // poèáteèní rychlost skoku (vìtší = vyšší skok)
+        }
+    }
+
 
 
 

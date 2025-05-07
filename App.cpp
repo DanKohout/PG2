@@ -178,6 +178,27 @@ void App::init_assets(void) {
     scene.try_emplace("world_floor", world_floor);
 
     //
+    // Prùhledné kostky na rohách
+    //
+    Model corner_cube = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "resources/textures/my_tex.png");
+    corner_cube.scale = glm::vec3(1.0f);
+    corner_cube.transparent = true;
+
+    std::vector<std::pair<std::string, glm::vec3>> corners = {
+        {"corner_1", glm::vec3(32.0f, 1.0f,  32.0f)},
+        {"corner_2", glm::vec3(32.0f, 1.0f, -32.0f)},
+        {"corner_3", glm::vec3(-32.0f, 1.0f, -32.0f)},
+        {"corner_4", glm::vec3(-32.0f, 1.0f,  32.0f)}
+    };
+
+    for (auto& [name, pos] : corners) {
+        Model m = corner_cube;
+        m.origin = pos;
+        scene.try_emplace(name, m);
+    }
+
+
+    //
 	// KRÁLÍK (pod podlahou) - EASTER EGG
     //
     Model model_bunny = Model("resources/objects/bunny_tri_vnt.obj", my_shader, "./resources/textures/box_rgb888.png");
@@ -245,22 +266,33 @@ int App::run(void)
         update_projection_matrix(window);
         my_shader.setUniform("uP_m", projection_matrix);
 
-        double fps_counter_seconds = 0;
+        // FPS calculation variables
+        double fps_timer = 0.0;
         int fps_counter_frames = 0;
+        int fps_display = 0;
+
         float lastFrameTime = static_cast<float>(glfwGetTime());
         float speed = 5.0f;
 
         while (!glfwWindowShouldClose(window))
         {
-            auto fps_frame_start_timestamp = std::chrono::steady_clock::now();
             float currentFrameTime = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrameTime - lastFrameTime;
             lastFrameTime = currentFrameTime;
 
+            fps_timer += deltaTime;
+            fps_counter_frames++;
+
+            if (fps_timer >= 1.0) {
+                fps_display = fps_counter_frames;
+                fps_counter_frames = 0;
+                fps_timer = 0.0;
+            }
+
             std::vector<Model*> transparent;
             transparent.reserve(scene.size());
 
-            // === POHYB KAMERY S KOLIZÍ ===
+            // Pohyb kamery s kolizí
             glm::vec3 movement = camera.ProcessInput(window, deltaTime * speed);
             if (!noclipEnabled) movement.y = 0.0f;
             glm::vec3 new_pos = camera.Position + movement;
@@ -269,16 +301,30 @@ int App::run(void)
                 camera.Position = new_pos;
             }
             if (!noclipEnabled) {
-                camera.Position.y = 1.0f;
+                if (isJumping) {
+                    // jednoduchá gravitace
+                    jumpVelocity -= 9.81f * deltaTime; // zrychlení smìrem dolù
+                    camera.Position.y += jumpVelocity * deltaTime;
+
+                    // dopad
+                    if (camera.Position.y <= 1.0f) {
+                        camera.Position.y = 1.0f;
+                        isJumping = false;
+                        jumpVelocity = 0.0f;
+                    }
+                }
+                else {
+                    camera.Position.y = 1.0f; // defaultní výška, pokud se neskáèe
+                }
             }
 
-            // === Animace pohybu pro "my_first_object" (sem a tam) ===
+
+            // Animace pro testovací objekt
             if (scene.find("my_first_object") != scene.end()) {
                 auto& model = scene.at("my_first_object");
-
-                float amplitude = 2.0f; // kolik se pohybuje doleva a doprava
-                float speed = 1.0f;     // rychlost oscilace
-                float offset = sin(currentFrameTime * speed) * amplitude;
+                float amplitude = 2.0f;
+                float anim_speed = 1.0f;
+                float offset = sin(currentFrameTime * anim_speed) * amplitude;
 
                 glm::vec3 moved_origin = model.origin;
                 moved_origin.x += offset;
@@ -287,23 +333,20 @@ int App::run(void)
                 model.local_model_matrix = glm::scale(model.local_model_matrix, model.scale);
             }
 
-
-            // === Animace králíka kolem osy Y ===
+            // Animace králíka
             if (scene.find("bunny") != scene.end()) {
                 auto& bunny = scene.at("bunny");
                 bunny.local_model_matrix = glm::translate(glm::mat4(1.0f), bunny.origin);
                 bunny.local_model_matrix = glm::rotate(bunny.local_model_matrix, currentFrameTime, glm::vec3(0, 1, 0));
             }
 
-
-            // === SLUNEÈNÍ CYKLUS ===
+            // Sluneèní cyklus
             float angle = (currentFrameTime / 120.0f) * glm::two_pi<float>();
             float radius = 60.0f;
-            glm::vec3 center(0.0f);
             glm::vec3 sun_pos = {
-                center.x + radius * cos(angle),
+                radius * cos(angle),
                 20.0f * sin(angle),
-                center.z + radius * sin(angle)
+                radius * sin(angle)
             };
             scene.at("sun_object").origin = sun_pos;
 
@@ -324,6 +367,7 @@ int App::run(void)
             glClearColor(0.85f * brightness, 0.9f * brightness, 1.0f * brightness, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            // Neprùhledné objekty
             for (auto& [name, model] : scene) {
                 if (!model.transparent) {
                     my_shader.setUniform("tex_scale", (name == "world_floor") ? 20.0f : 1.0f);
@@ -334,6 +378,7 @@ int App::run(void)
                 }
             }
 
+            // Prùhledné objekty
             std::sort(transparent.begin(), transparent.end(), [&](Model const* a, Model const* b) {
                 glm::vec3 ta = glm::vec3(a->local_model_matrix[3]);
                 glm::vec3 tb = glm::vec3(b->local_model_matrix[3]);
@@ -346,41 +391,29 @@ int App::run(void)
             for (auto p : transparent) p->draw();
             glDisable(GL_BLEND);
             glDepthMask(GL_TRUE);
-            //glEnable(GL_CULL_FACE);
-            
-            // === ImGui Frame Begin ===
+
+            // === ImGui ===
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
             if (showHUD) {
                 ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
-                ImGui::SetNextWindowBgAlpha(0.4f);  // Prùhledné pozadí
+                ImGui::SetNextWindowBgAlpha(0.4f);
                 ImGui::Begin("HUD", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
-                ImGui::Text("FPS: %d", fps_counter_frames);
+                ImGui::Text("FPS: %d", fps_display);
                 ImGui::Text("VSync: %s", vsyncEnabled ? "ON" : "OFF");
-				ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)", camera.Position.x, camera.Position.y, camera.Position.z);
-				ImGui::Text("NoClip: %s", noclipEnabled ? "ON" : "OFF");
+                ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)", camera.Position.x, camera.Position.y, camera.Position.z);
+                ImGui::Text("NoClip: %s", noclipEnabled ? "ON" : "OFF");
                 ImGui::Text("Flashlight: %s", flashlightOn ? "ON" : "OFF");
-                
                 ImGui::End();
             }
 
-            // === ImGui Render ===
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-            
-
-
-
             glfwSwapBuffers(window);
             glfwPollEvents();
-
-            auto fps_frame_end_timestamp = std::chrono::steady_clock::now();
-            fps_counter_seconds += std::chrono::duration<double>(fps_frame_end_timestamp - fps_frame_start_timestamp).count();
-            fps_counter_frames++;
-
         }
     }
     catch (std::exception const& e) {
@@ -391,11 +424,6 @@ int App::run(void)
     std::cout << "Finished OK...\n";
     return EXIT_SUCCESS;
 }
-
-
-
-
-
 
 
 void App::update_projection_matrix(/*void*/GLFWwindow* window)
@@ -558,4 +586,13 @@ bool App::isPositionBlocked(glm::vec3 pos)
 
     return false;
 }
+
+
+void App::toggleVsync() {
+    vsyncEnabled = !vsyncEnabled;
+    glfwMakeContextCurrent(window); // ensure correct context
+    glfwSwapInterval(vsyncEnabled ? 1 : 0);
+    std::cout << "VSync: " << (vsyncEnabled ? "ON" : "OFF") << std::endl;
+}
+
 
