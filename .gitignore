@@ -71,7 +71,9 @@ packages/
 GeneratedFiles/
 
 # Ignore resources
-resources/
+resources/obj/
+resources/objects/
+resources/textures/
 vcpkg_installed/
 PG2_project/
 

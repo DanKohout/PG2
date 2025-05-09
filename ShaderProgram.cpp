@@ -41,6 +41,16 @@ void ShaderProgram::setUniform(const std::string& name, const int val) {
 		std::cerr << "no uniform with name:" << name << '\n';
 		return;
 	}
+	glUniform1i(loc, val);
+}
+
+void ShaderProgram::setUniform(const std::string& name, const double val) {
+	// TODO: implement ->done?
+	auto loc = glGetUniformLocation(ID, name.c_str());
+	if (loc == -1) {
+		std::cerr << "no uniform with name:" << name << '\n';
+		return;
+	}
 	glUniform1d(loc, val);
 }
 

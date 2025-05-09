@@ -26,6 +26,40 @@ uniform int spot_on;             // zapnutí / vypnutí
 
 out vec4 FragColor;
 
+uniform vec3 camera_position;
+
+
+
+
+vec3 calcSpotlight(vec3 fragPos, vec3 normal, vec3 viewDir)
+{
+    vec3 lightDir = normalize(spot_position - fragPos);
+    float distance = length(spot_position - fragPos);
+
+    // Spotlight angle-based intensity
+    float cosAngle = dot(-lightDir, normalize(spot_direction));
+    float epsilon = spot_cutoff - spot_outer_cutoff;
+    float spotIntensity = clamp((cosAngle - spot_outer_cutoff) / epsilon, 0.0, 1.0);
+
+    // If outside of the outer cone, no light
+    if (spotIntensity <= 0.0)
+        return vec3(0.0);
+
+    // Blinn-Phong lighting
+    vec3 halfVec = normalize(lightDir + viewDir);
+
+    float diff = max(dot(normal, lightDir), 0.0);
+    float spec = pow(max(dot(normal, halfVec), 0.0), specular_shinines);
+
+    vec3 ambientLight = ambient_material * ambient_intensity * 0.1 * spotIntensity;
+    vec3 diffuseLight = diffuse_material * diffuse_intensity * diff * spotIntensity;
+    vec3 specularLight = specular_material * specular_intensity * spec * spotIntensity;
+
+    return ambientLight + diffuseLight + specularLight;
+}
+
+
+
 void main()
 {
     //Normalize the incoming N, L and V vectors
@@ -45,18 +79,8 @@ void main()
     // === Spotlight (baterka) ===
     if (spot_on == 1)
     {
-        vec3 spot_to_frag = fs_in.frag_pos_view - spot_position;
-        float theta = dot(normalize(-spot_to_frag), normalize(spot_direction));
-
-        float epsilon = spot_cutoff - spot_outer_cutoff;
-        float intensity = clamp((theta - spot_outer_cutoff) / epsilon, 0.0, 1.0);
-
-        vec3 spot_diff = intensity * diffuse_material * diffuse_intensity;
-        vec3 spot_spec = intensity * specular_material * specular_intensity;
-
-        diffuse += spot_diff;
-        specular += spot_spec;
-        ambient += 0.1 * intensity;
+        vec3 spotLightColor = calcSpotlight(fs_in.frag_pos_view, N, V);
+        ambient  += spotLightColor; // You can also split these into ambient/diffuse/spec if you prefer
     }
 
 

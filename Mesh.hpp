@@ -114,6 +114,9 @@ public:
 
         // Set model matrix uniform in the shader
         shader.setUniform("uM_m", model_matrix);
+        shader.setUniform("matAmbient", glm::vec3(0.1f, 0.1f, 0.1f));
+        shader.setUniform("matSpecular", glm::vec3(0.8f, 0.8f, 0.8f));
+        shader.setUniform("matShininess", 32.0f);
 
         if (texture_id > 0) {
             glActiveTexture(GL_TEXTURE0);

@@ -151,7 +151,8 @@ bool App::init()
 }
 
 void App::init_assets(void) {
-    my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
+    //my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
+    my_shader = ShaderProgram("resources/basic.vert", "resources/advanced.frag");
 
     // Pùvodní jednotkové rozmìry
     float cell_size_x = 1.0f;
@@ -352,7 +353,7 @@ int App::run(void)
 
             float brightness = glm::clamp((sun_pos.y + 5.0f) / 10.0f, 0.15f, 1.0f);
             glm::vec3 light_dir = glm::normalize(glm::vec3(0.0f) - sun_pos);
-            my_shader.setUniform("light_direction", light_dir);
+           /* my_shader.setUniform("light_direction", light_dir);
 
             my_shader.setUniform("ambient_intensity", glm::vec3(0.2f) * brightness);
             my_shader.setUniform("diffuse_intensity", glm::vec3(0.8f) * brightness);
@@ -360,12 +361,43 @@ int App::run(void)
             my_shader.setUniform("ambient_material", glm::vec3(0.8f));
             my_shader.setUniform("diffuse_material", glm::vec3(0.5f));
             my_shader.setUniform("specular_material", glm::vec3(1.0f));
-            my_shader.setUniform("specular_shinines", 5.0f);
+            my_shader.setUniform("specular_shinines", 10.0f);
 
-            my_shader.setUniform("uV_m", camera.GetViewMatrix());
+            my_shader.setUniform("spot_position", camera.Position);
+            my_shader.setUniform("camera_position", camera.Position);
+
+            my_shader.setUniform("spot_direction", camera.Front);
+
+            my_shader.setUniform("spot_cutoff", cos(glm::radians(12.5f)));     // Inner cone (cosine of angle in radians)
+            my_shader.setUniform("spot_outer_cutoff", cos(glm::radians(17.5f))); // Outer cone (for soft edges)
+            my_shader.setUniform("spot_on", flashlightOn);
+            */
+
 
             glClearColor(0.85f * brightness, 0.9f * brightness, 1.0f * brightness, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            //my_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            // Spot light
+            my_shader.setUniform("uV_m", camera.GetViewMatrix());
+            //my_shader.setUniform("view", camera.GetViewMatrix());
+            //my_shader.setUniform("projection", projection_matrix);
+            my_shader.setUniform("viewPos", camera.Position);
+            my_shader.setUniform("spotLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            my_shader.setUniform("spotLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+            my_shader.setUniform("spotLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+            my_shader.setUniform("spotLight.position", camera.Position);
+            my_shader.setUniform("spotLight.direction", camera.Front/* fpsCamera.getLook()*/);
+            my_shader.setUniform("spotLight.cosInnerCone", glm::cos(glm::radians(15.0f)));
+            my_shader.setUniform("spotLight.cosOuterCone", glm::cos(glm::radians(20.0f)));
+            my_shader.setUniform("spotLight.constant", 1.0f);
+            my_shader.setUniform("spotLight.linear", 0.07f);
+            my_shader.setUniform("spotLight.exponent", 0.0017f);
+            //my_shader.setUniform("spotLight.on", 1);
+            my_shader.setUniform("spotOn", flashlightOn? 1:0);
+            
+            //else
+            //    my_shader.setUniform("spotOn", 0);
 
             // Neprùhledné objekty
             for (auto& [name, model] : scene) {
