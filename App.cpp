@@ -275,8 +275,7 @@ int App::run(void)
         float lastFrameTime = static_cast<float>(glfwGetTime());
         float speed = 5.0f;
 
-        while (!glfwWindowShouldClose(window))
-        {
+        while (!glfwWindowShouldClose(window)) {
             float currentFrameTime = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrameTime - lastFrameTime;
             lastFrameTime = currentFrameTime;
@@ -293,21 +292,40 @@ int App::run(void)
             std::vector<Model*> transparent;
             transparent.reserve(scene.size());
 
-            // Pohyb kamery s kolizí
+            // Získej vektor pohybu z kamery (na základì vstupu a èasu)
             glm::vec3 movement = camera.ProcessInput(window, deltaTime * speed);
-            if (!noclipEnabled) movement.y = 0.0f;
-            glm::vec3 new_pos = camera.Position + movement;
+            if (!noclipEnabled) movement.y = 0.0f; // vertikální pohyb zakázán mimo noclip režim
 
-            if (noclipEnabled || !isPositionBlocked(new_pos)) {
+            if (!noclipEnabled) {
+                glm::vec3 new_pos = camera.Position;
+
+                // Otestuj pohyb ve smìru X a aplikuj ho, pokud nekoliduje
+                glm::vec3 move_x = glm::vec3(movement.x, 0.0f, 0.0f);
+                if (!isPositionBlocked(new_pos + move_x)) {
+                    new_pos += move_x;
+                }
+
+                // Otestuj pohyb ve smìru Z a aplikuj ho, pokud nekoliduje
+                glm::vec3 move_z = glm::vec3(0.0f, 0.0f, movement.z);
+                if (!isPositionBlocked(new_pos + move_z)) {
+                    new_pos += move_z;
+                }
+
+                // Aktualizuj pozici kamery
                 camera.Position = new_pos;
             }
+            else {
+                // Pokud je aktivní noclip, ignoruj kolize a pohni se rovnou
+                camera.Position += movement;
+            }
+
             if (!noclipEnabled) {
                 if (isJumping) {
-                    // jednoduchá gravitace
-                    jumpVelocity -= 9.81f * deltaTime; // zrychlení smìrem dolù
+                    // Aplikuj gravitaci bìhem skoku
+                    jumpVelocity -= 9.81f * deltaTime;
                     camera.Position.y += jumpVelocity * deltaTime;
 
-                    // dopad
+                    // Pokud kamera dopadne na zem, ukonèi skok
                     if (camera.Position.y <= 1.0f) {
                         camera.Position.y = 1.0f;
                         isJumping = false;
@@ -315,7 +333,8 @@ int App::run(void)
                     }
                 }
                 else {
-                    camera.Position.y = 1.0f; // defaultní výška, pokud se neskáèe
+                    // Pokud není skok aktivní, drž výšku kamery na úrovni podlahy
+                    camera.Position.y = 1.0f;
                 }
             }
 
