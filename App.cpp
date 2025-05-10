@@ -276,6 +276,8 @@ int App::run(void)
         float lastFrameTime = static_cast<float>(glfwGetTime());
         float speed = 5.0f;
 
+        
+
         while (!glfwWindowShouldClose(window)) {
             float currentFrameTime = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrameTime - lastFrameTime;
@@ -398,7 +400,7 @@ int App::run(void)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-            my_shader.setUniform("ambient", glm::vec3(0.1f, 0.1f, 0.1f));
+            my_shader.setUniform("ambient", glm::vec3(0.05f, 0.05f, 0.05f));
             //my_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
             // Spot light
             my_shader.setUniform("uV_m", camera.GetViewMatrix());
@@ -421,7 +423,7 @@ int App::run(void)
             //Point light
             glm::vec3 goal_position = scene.at("goal_cube").origin;
             my_shader.setUniform("pointLight.position", goal_position);
-            my_shader.setUniform("pointLight.diffuse", glm::vec3(1.0f, 0.95f, 0.8f));  // warm light
+            my_shader.setUniform("pointLight.diffuse", glm::vec3(0.6f, 0.6f, 0.8f));  // blue-ish light
             my_shader.setUniform("pointLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
             my_shader.setUniform("pointLight.constant", 1.0f);
             my_shader.setUniform("pointLight.linear", 0.09f);
@@ -429,9 +431,43 @@ int App::run(void)
 
             my_shader.setUniform("pointOn", 1);
 
-            my_shader.setUniform("emissiveColor", glm::vec3(1.0f, 0.95f, 0.8f)); // warm
+            my_shader.setUniform("emissiveColor", glm::vec3(0.6f, 0.6f, 0.8f)); // blue-ish light
             my_shader.setUniform("emissivePosition", goal_position);
             my_shader.setUniform("emissiveRadius", 1.5f);  // tweak as needed
+
+            //Directional light
+            my_shader.setUniform("dirOn", 1);
+
+            glm::vec3 sun_position = scene.at("sun_object").origin;
+            glm::vec3 sun_target = glm::vec3(0.0f);  // The direction it "shines toward", usually the world origin
+
+            glm::vec3 sun_direction = glm::normalize(sun_target - sun_position);
+            my_shader.setUniform("dirLight.direction", sun_direction);
+
+            
+            float maxSunHeight = 10.0f;  // Maximum height where the sun is brightest
+            float sunHeightRaw = sun_position.y / maxSunHeight;  // can go below 0
+            float sunIntensity = glm::clamp(sunHeightRaw, 0.0f, 1.0f);
+
+            //my_shader.setUniform("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));  // adjust to match scene
+            if (sunIntensity > 0.0f) {
+                glm::vec3 baseDiffuse = glm::vec3(0.8f, 0.8f, 0.6f);
+                glm::vec3 baseSpecular = glm::vec3(0.5f);
+
+                my_shader.setUniform("dirLight.diffuse", baseDiffuse * sunIntensity);
+                my_shader.setUniform("dirLight.specular", baseSpecular * sunIntensity);
+                my_shader.setUniform("dirOn", 1);
+            }
+            else {
+                my_shader.setUniform("dirOn", 0);  // Turn off light entirely
+            }
+            //sun-object emission
+            my_shader.setUniform("sunEmissivePosition", sun_position);
+            //my_shader.setUniform("sunEmissiveColor", glm::vec3(1.0f, 0.85f, 0.5f));  // warm glow
+            my_shader.setUniform("sunEmissiveColor", glm::vec3(1.0f, 1.0f, 0.5f));
+            my_shader.setUniform("sunEmissiveRadius", 10.0f);  // adjust for spread
+
+
 
             // Neprùhledné objekty
             for (auto& [name, model] : scene) {
