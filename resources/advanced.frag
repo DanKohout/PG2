@@ -12,7 +12,7 @@ struct SpotLight {
     vec3 direction;
     float cosInnerCone;
     float cosOuterCone;
-    vec3 ambient;
+    //vec3 ambient;
     vec3 diffuse;
     vec3 specular;
     int on;
@@ -39,7 +39,7 @@ uniform vec3 matAmbient;
 uniform vec3 matSpecular;
 uniform float matShininess;
 
-
+uniform vec3 ambient;
 out vec4 frag_color;
 
 vec3 calcSpotLight();
@@ -47,7 +47,7 @@ vec3 calcSpotLight();
 void main()
 {
     // Apply ambient light to base color
-    vec3 finalColor = (matAmbient + spotLight.ambient);
+    vec3 finalColor = (matAmbient + ambient);
 
     // Add spotlight only if enabled
     if (spotOn == 1) {

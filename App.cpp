@@ -397,13 +397,15 @@ int App::run(void)
             glClearColor(0.85f * brightness, 0.9f * brightness, 1.0f * brightness, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+            my_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
             //my_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
             // Spot light
             my_shader.setUniform("uV_m", camera.GetViewMatrix());
             //my_shader.setUniform("view", camera.GetViewMatrix());
             //my_shader.setUniform("projection", projection_matrix);
             my_shader.setUniform("viewPos", camera.Position);
-            my_shader.setUniform("spotLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            //my_shader.setUniform("spotLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
             my_shader.setUniform("spotLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
             my_shader.setUniform("spotLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
             my_shader.setUniform("spotLight.position", camera.Position);
