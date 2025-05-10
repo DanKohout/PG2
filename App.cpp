@@ -171,7 +171,8 @@ void App::init_assets(void) {
     //
     // PODLAHA
     //
-    Model world_floor = Model("resources/objects/floor.obj", my_shader, "./resources/textures/maze_ground.jpg");
+    Model world_floor = Model("resources/objects/ground_flipped_normals.obj", my_shader, "./resources/textures/maze_ground.jpg");
+    //Model world_floor = Model("resources/objects/ground_flipped_normals.obj", my_shader, "./resources/textures/blue_glass_tex.png");
     world_floor.transparent = false;
     world_floor.origin = glm::vec3(0.0f, 0.0f, 0.0f);
     world_floor.scale = glm::vec3(2.0f, 1.0f, 2.0f);

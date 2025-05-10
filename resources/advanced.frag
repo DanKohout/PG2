@@ -46,19 +46,16 @@ vec3 calcSpotLight();
 
 void main()
 {
-    // Ambient lighting
-    vec3 ambient = spotLight.ambient * matAmbient;
+    // Apply ambient light to base color
+    vec3 finalColor = (matAmbient + spotLight.ambient);
 
-    vec3 spotColor = vec3(0.1);
-
-    // If the light is on, compute spotlight contribution
-    //if (spot_on == 1)
-    //if (spotLight.on == 1)
-    if (spotOn == 1){
-        spotColor = calcSpotLight();
+    // Add spotlight only if enabled
+    if (spotOn == 1) {
+        finalColor += calcSpotLight();
     }
-    //frag_color = vec4(1, 0.0, 0.0, 1.0);
-    frag_color = vec4(ambient + spotColor, 1.0) * texture(tex0, fs_in.TexCoord);
+
+    //adding textures and putting it in the frag_color
+    frag_color = vec4(finalColor, 1.0) * texture(tex0, fs_in.TexCoord);
 }
 
 //--------------------------------------------------------------
@@ -69,12 +66,12 @@ vec3 calcSpotLight()
     vec3 lightDir = normalize(spotLight.position - fs_in.FragPos);
     vec3 spotDir  = normalize(spotLight.direction);
 
-    float cosDir = dot(-lightDir, spotDir);  // cone angle
+    float cosDir = dot(-lightDir, spotDir);
     float spotIntensity = smoothstep(spotLight.cosOuterCone, spotLight.cosInnerCone, cosDir);
 
     vec3 normal = normalize(fs_in.Normal);
     float NdotL = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = spotLight.diffuse * NdotL * texture(tex0, fs_in.TexCoord).rgb;
+    vec3 diffuse = spotLight.diffuse * NdotL;
 
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 halfDir = normalize(lightDir + viewDir);
@@ -84,8 +81,5 @@ vec3 calcSpotLight()
     float distance = length(spotLight.position - fs_in.FragPos);
     float attenuation = 1.0 / (spotLight.constant + spotLight.linear * distance + spotLight.exponent * (distance * distance));
 
-    diffuse *= attenuation * spotIntensity;
-    specular *= attenuation * spotIntensity;
-
-    return diffuse + specular;
+    return (diffuse + specular) * attenuation * spotIntensity;
 }
