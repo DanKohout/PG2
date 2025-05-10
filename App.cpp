@@ -398,7 +398,7 @@ int App::run(void)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-            my_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            my_shader.setUniform("ambient", glm::vec3(0.1f, 0.1f, 0.1f));
             //my_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.2f));
             // Spot light
             my_shader.setUniform("uV_m", camera.GetViewMatrix());
@@ -418,8 +418,20 @@ int App::run(void)
             //my_shader.setUniform("spotLight.on", 1);
             my_shader.setUniform("spotOn", flashlightOn? 1:0);
             
-            //else
-            //    my_shader.setUniform("spotOn", 0);
+            //Point light
+            glm::vec3 goal_position = scene.at("goal_cube").origin;
+            my_shader.setUniform("pointLight.position", goal_position);
+            my_shader.setUniform("pointLight.diffuse", glm::vec3(1.0f, 0.95f, 0.8f));  // warm light
+            my_shader.setUniform("pointLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+            my_shader.setUniform("pointLight.constant", 1.0f);
+            my_shader.setUniform("pointLight.linear", 0.09f);
+            my_shader.setUniform("pointLight.exponent", 0.032f);
+
+            my_shader.setUniform("pointOn", 1);
+
+            my_shader.setUniform("emissiveColor", glm::vec3(1.0f, 0.95f, 0.8f)); // warm
+            my_shader.setUniform("emissivePosition", goal_position);
+            my_shader.setUniform("emissiveRadius", 1.5f);  // tweak as needed
 
             // Neprùhledné objekty
             for (auto& [name, model] : scene) {
