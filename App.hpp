@@ -3,25 +3,31 @@
 #include <chrono>
 #include <stack>
 #include <random>
+#include <unordered_map>
+#include <filesystem>
+#include <opencv2/opencv.hpp>
 
-// OpenCV (does not depend on GL)
-#include <opencv2\opencv.hpp>
-
-// OpenGL Extension Wrangler: allow all multiplatform GL functions
-#include <GL/glew.h> 
-// WGLEW = Windows GL Extension Wrangler (change for different platform) 
-// platform specific functions (in this case Windows)
-#include <GL/wglew.h> 
-
-// GLFW toolkit
-// Uses GL calls to open GL context, i.e. GLEW __MUST__ be first.
+// OpenGL
+#include <GL/glew.h>
+#include <GL/wglew.h>
 #include <GLFW/glfw3.h>
 
-// OpenGL math (and other additional GL libraries, at the end)
+// GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 #include "gl_err_callback.hpp"
 #include "assets.hpp"
+#include "ShaderProgram.hpp"
+#include "Model.hpp"
+#include "camera.hpp"
+
+// vypisování HUDu
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <nlohmann/json.hpp>
+
 
 class App {
 public:
@@ -29,20 +35,44 @@ public:
 
     bool init(void);
     int run(void);
-
     ~App();
 
-    
+    void GetInformation(void);
+    void update_projection_matrix(GLFWwindow* window);
 
-    
+    // === Maze ===
+    uchar getmap(cv::Mat& map, int x, int y);         // Pøístup do mapy
+    void genLabyrinth(cv::Mat& map);                  // Generování bludištì
+    bool isJumping = false;
+    float jumpVelocity = 0.0f;
+
+
 private:
-
     static bool vsyncEnabled;
+    static Camera camera;
 
+
+    bool aaEnabled = false;
+    bool fullscreen = false;
+    int win_width = 800;
+    int win_height = 600;
+
+    // pro uložení okna ve window režimu
+    int windowed_x = 100, windowed_y = 100;
+    int windowed_width = win_width, windowed_height = win_height;
+
+
+    void loadConfig();  // nová funkce
+
+
+    bool showHUD = false;
+    bool flashlightOn = false;
+    bool noclipEnabled = false; // režim chùze výchozí
+    bool isPositionBlocked(glm::vec3 position); // funkce pro kolize
 
     GLFWwindow* window = NULL;
+    ShaderProgram my_shader;
 
-    void GetInformation(void);
     void init_assets(void);
 
     static void error_callback(int error, const char* description);
@@ -51,21 +81,28 @@ private:
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+    static void fbsize_callback(GLFWwindow* window, int width, int height);
+    void drawText(const std::string& text, float x, float y);
+    void toggleVsync();
+    void toggleFullscreen();
 
-    GLuint shader_prog_ID{ 0 };
-    GLuint VBO_ID{ 0 };
-    GLuint VAO_ID{ 0 };
-
-
-    GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
-
-    std::vector<vertex> triangle_vertices =
-    {
-        {{0.0f,  0.5f,  0.0f}},
-        {{0.5f, -0.5f,  0.0f}},
-        {{-0.5f, -0.5f,  0.0f}}
-    };
 
     
 
+
+
+    GLuint textureInit(const std::filesystem::path& file_name);
+    GLuint gen_tex(cv::Mat& image);
+
+protected:
+    // projection
+    int width{ 0 }, height{ 0 };
+    float fov = 60.0f;
+    glm::mat4 projection_matrix = glm::identity<glm::mat4>();
+
+    // scene data
+    std::unordered_map<std::string, Model> scene;
+
+    // color
+    GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 };
