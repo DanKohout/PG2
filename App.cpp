@@ -4,7 +4,7 @@
 #include "app.hpp"
 #include "assets.hpp"
 
-// vypisov·nÌ HUDu
+// vypisov√°n√≠ HUDu
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -96,8 +96,8 @@ bool App::init()
         if (aaEnabled)
             glEnable(GL_MULTISAMPLE);  // povol antialiasing
 
-        glEnable(GL_DEPTH_TEST);        // kreslenÌ podle hloubky - Z buffer
-        glDepthFunc(GL_LESS);           // doporuËen· funkce hloubkovÈho testu
+        glEnable(GL_DEPTH_TEST);        // kreslen√≠ podle hloubky - Z buffer
+        glDepthFunc(GL_LESS);           // doporu√®en√° funkce hloubkov√©ho testu
 
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -126,7 +126,7 @@ bool App::init()
         glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 
-		mapa = cv::Mat(maze_width, maze_depth, CV_8U); // velikost bludiötÏ
+		mapa = cv::Mat(maze_width, maze_depth, CV_8U); // velikost bludi≈°t√¨
 		genLabyrinth(mapa);
 
         //init_assets("resources"); // transparent and non-transparent models
@@ -144,10 +144,10 @@ bool App::init()
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-        // M˘ûeö zapnout styl
+        // M√π≈æe≈° zapnout styl
         ImGui::StyleColorsDark();
 
-        // P¯i¯azenÌ backends
+        // P√∏i√∏azen√≠ backends
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init("#version 460");
 
@@ -168,17 +168,17 @@ void App::init_assets(void) {
     //my_shader = ShaderProgram("resources/basic.vert", "resources/basic.frag");
     my_shader = ShaderProgram("resources/basic.vert", "resources/advanced.frag");
 
-    // P˘vodnÌ jednotkovÈ rozmÏry
+    // P√πvodn√≠ jednotkov√© rozm√¨ry
     float cell_size_x = 1.0f;
     float cell_size_z = 1.0f;
     float wall_height = 5.0f;
     float block_height = 1.0f;
 
-    // Celkov· velikost bludiötÏ
+    // Celkov√° velikost bludi≈°t√¨
     float maze_scale_x = mapa.cols * cell_size_x;
     float maze_scale_z = mapa.rows * cell_size_z;
 
-    // Posun na st¯ed
+    // Posun na st√∏ed
     float offset_x = -maze_scale_x / 2.0f;
     float offset_z = -maze_scale_z / 2.0f;
 
@@ -194,7 +194,7 @@ void App::init_assets(void) {
     scene.try_emplace("world_floor", world_floor);
 
     //
-    // Pr˘hlednÈ kostky na roh·ch
+    // Pr√πhledn√© kostky na roh√°ch
     //
     Model corner_cube = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "resources/textures/blue_glass_tex.png");//my_tex.png");
     corner_cube.scale = glm::vec3(1.0f);
@@ -215,34 +215,34 @@ void App::init_assets(void) {
 
 
     //
-	// KR¡LÕK (pod podlahou) - EASTER EGG
+	// KR√ÅL√çK (pod podlahou) - EASTER EGG
     //
     Model model_bunny = Model("resources/objects/bunny_tri_vnt.obj", my_shader, "./resources/textures/box_rgb888.png");
     model_bunny.origin.y = -10.0f;
     scene.try_emplace("bunny", model_bunny);
     
-    // SLUNÕ»KO ñ viditeln˝ zdroj svÏtla
+    // SLUN√ç√àKO ‚Äì viditeln√Ω zdroj sv√¨tla
     Model sun = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "resources/textures/sun_texture.png");
     sun.transparent = false;
-    sun.origin = glm::vec3(-4.0f, 6.0f, -4.0f);  // stejn˝ smÏr jako p˘vodnÌ svÏtlo
-    sun.scale = glm::vec3(0.8f);                // zmenöenÌ
+    sun.origin = glm::vec3(-4.0f, 6.0f, -4.0f);  // stejn√Ω sm√¨r jako p√πvodn√≠ sv√¨tlo
+    sun.scale = glm::vec3(0.8f);                // zmen≈°en√≠
     scene.try_emplace("sun_object", sun);
 
     //
-    // TESTOVACÕ KOSTKA
+    // TESTOVAC√ç KOSTKA
     //
     Model my_model = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "./resources/textures/box_rgb888.png");
     my_model.origin.y = 0.5f;
     scene.insert({ "my_first_object", my_model });
 
     //
-    // äABLONY PRO ZDI A CÕL
+    // ≈†ABLONY PRO ZDI A C√çL
     //
     Model wall_template = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "./resources/textures/stone_wall.png");
     Model goal_template = Model("resources/objects/cube_triangles_vnt.obj", my_shader, "./resources/textures/goal_box.png");
 
     //
-    // GENEROV¡NÕ STÃN A CÕLE
+    // GENEROV√ÅN√ç ST√åN A C√çLE
     //
     for (int y = 0; y < mapa.rows; ++y) {
         for (int x = 0; x < mapa.cols; ++x) {
@@ -311,20 +311,20 @@ int App::run(void)
             std::vector<Model*> transparent;
             transparent.reserve(scene.size());
 
-            // ZÌskej vektor pohybu z kamery (na z·kladÏ vstupu a Ëasu)
+            // Z√≠skej vektor pohybu z kamery (na z√°klad√¨ vstupu a √®asu)
             glm::vec3 movement = camera.ProcessInput(window, deltaTime * speed);
-            if (!noclipEnabled) movement.y = 0.0f; // vertik·lnÌ pohyb zak·z·n mimo noclip reûim
+            if (!noclipEnabled) movement.y = 0.0f; // vertik√°ln√≠ pohyb zak√°z√°n mimo noclip re≈æim
 
             if (!noclipEnabled) {
                 glm::vec3 new_pos = camera.Position;
 
-                // Otestuj pohyb ve smÏru X a aplikuj ho, pokud nekoliduje
+                // Otestuj pohyb ve sm√¨ru X a aplikuj ho, pokud nekoliduje
                 glm::vec3 move_x = glm::vec3(movement.x, 0.0f, 0.0f);
                 if (!isPositionBlocked(new_pos + move_x)) {
                     new_pos += move_x;
                 }
 
-                // Otestuj pohyb ve smÏru Z a aplikuj ho, pokud nekoliduje
+                // Otestuj pohyb ve sm√¨ru Z a aplikuj ho, pokud nekoliduje
                 glm::vec3 move_z = glm::vec3(0.0f, 0.0f, movement.z);
                 if (!isPositionBlocked(new_pos + move_z)) {
                     new_pos += move_z;
@@ -334,17 +334,17 @@ int App::run(void)
                 camera.Position = new_pos;
             }
             else {
-                // Pokud je aktivnÌ noclip, ignoruj kolize a pohni se rovnou
+                // Pokud je aktivn√≠ noclip, ignoruj kolize a pohni se rovnou
                 camera.Position += movement;
             }
 
             if (!noclipEnabled) {
                 if (isJumping) {
-                    // Aplikuj gravitaci bÏhem skoku
+                    // Aplikuj gravitaci b√¨hem skoku
                     jumpVelocity -= 9.81f * deltaTime;
                     camera.Position.y += jumpVelocity * deltaTime;
 
-                    // Pokud kamera dopadne na zem, ukonËi skok
+                    // Pokud kamera dopadne na zem, ukon√®i skok
                     if (camera.Position.y <= 1.0f) {
                         camera.Position.y = 1.0f;
                         isJumping = false;
@@ -352,13 +352,13 @@ int App::run(void)
                     }
                 }
                 else {
-                    // Pokud nenÌ skok aktivnÌ, drû v˝öku kamery na ˙rovni podlahy
+                    // Pokud nen√≠ skok aktivn√≠, dr≈æ v√Ω≈°ku kamery na √∫rovni podlahy
                     camera.Position.y = 1.0f;
                 }
             }
 
 
-            // Animace pro testovacÌ objekt
+            // Animace pro testovac√≠ objekt
             if (scene.find("my_first_object") != scene.end()) {
                 auto& model = scene.at("my_first_object");
                 float amplitude = 2.0f;
@@ -373,14 +373,14 @@ int App::run(void)
                 
             }
 
-            // Animace kr·lÌka
+            // Animace kr√°l√≠ka
             if (scene.find("bunny") != scene.end()) {
                 auto& bunny = scene.at("bunny");
                 bunny.local_model_matrix = glm::translate(glm::mat4(1.0f), bunny.origin);
                 bunny.local_model_matrix = glm::rotate(bunny.local_model_matrix, currentFrameTime, glm::vec3(0, 1, 0));
             }
 
-            // SluneËnÌ cyklus
+            // Slune√®n√≠ cyklus
             float angle = (currentFrameTime / 120.0f) * glm::two_pi<float>();
             float radius = 60.0f;
             glm::vec3 sun_pos = {
@@ -482,7 +482,7 @@ int App::run(void)
 
 
 
-            // Nepr˘hlednÈ objekty
+            // Nepr√πhledn√© objekty
             for (auto& [name, model] : scene) {
                 if (!model.transparent) {
                     my_shader.setUniform("tex_scale", (name == "world_floor") ? 20.0f : 1.0f);
@@ -493,7 +493,7 @@ int App::run(void)
                 }
             }
 
-            // Pr˘hlednÈ objekty
+            // Pr√πhledn√© objekty
             std::sort(transparent.begin(), transparent.end(), [&](Model const* a, Model const* b) {
                 glm::vec3 ta = glm::vec3(a->local_model_matrix[3]);
                 glm::vec3 tb = glm::vec3(b->local_model_matrix[3]);
@@ -553,7 +553,7 @@ void App::update_projection_matrix(/*void*/GLFWwindow* window)
     float ratio = static_cast<float>(this_inst->width) / this_inst->height;
 
     this_inst->projection_matrix = glm::perspective(
-        glm::radians(this_inst->fov),   // The vertical Field of View, in radians: the amount of "zoom". Think "camera lens". Usually between 90∞ (extra wide) and 30∞ (quite zoomed in)
+        glm::radians(this_inst->fov),   // The vertical Field of View, in radians: the amount of "zoom". Think "camera lens". Usually between 90¬∞ (extra wide) and 30¬∞ (quite zoomed in)
         ratio,               // Aspect Ratio. Depends on the size of your window.
         0.1f,                // Near clipping plane. Keep as big as possible, or you'll get precision issues.
         100.0f             // 20000.0f Far clipping plane. Keep as little as possible.
@@ -565,7 +565,6 @@ void App::update_projection_matrix(/*void*/GLFWwindow* window)
 App::~App()
 {
     my_shader.clear();
-    
     if (window)
         glfwDestroyWindow(window);
     // === ImGui Shutdown ===
@@ -577,7 +576,6 @@ App::~App()
     // clean-up
     cv::destroyAllWindows();
     std::cout << "Bye...\n";
-    
 
 }
 
@@ -611,7 +609,7 @@ uchar App::getmap(cv::Mat& map, int x, int y)
 }
 
 void App::genLabyrinth(cv::Mat& map) {
-    // ROZMÃRY, MUSÕ SEDÃT S init_assets
+    // ROZM√åRY, MUS√ç SED√åT S init_assets
     float maze_scale_x = float(maze_depth);
     float maze_scale_z = float(maze_width);
 
@@ -621,16 +619,16 @@ void App::genLabyrinth(cv::Mat& map) {
     std::default_random_engine e1(r());
     std::uniform_int_distribution<int> uniform_height(1, map.rows - 2);
     std::uniform_int_distribution<int> uniform_width(1, map.cols - 2);
-    std::uniform_int_distribution<int> uniform_block(0, 8); // 1/16 öance na zeÔ
+    std::uniform_int_distribution<int> uniform_block(0, 8); // 1/16 ≈°ance na ze√Ø
 
-    // Vyplnit celÈ bludiötÏ
+    // Vyplnit cel√© bludi≈°t√¨
     for (int j = 0; j < map.rows; j++) {
         for (int i = 0; i < map.cols; i++) {
             map.at<uchar>(j, i) = (uniform_block(e1) == 0) ? '#' : '.';
         }
     }
 
-    // OhraniËenÌ
+    // Ohrani√®en√≠
     for (int i = 0; i < map.cols; i++) {
         map.at<uchar>(0, i) = '#';
         map.at<uchar>(map.rows - 1, i) = '#';
@@ -640,13 +638,13 @@ void App::genLabyrinth(cv::Mat& map) {
         map.at<uchar>(j, map.cols - 1) = '#';
     }
 
-    // StartovnÌ pozice
+    // Startovn√≠ pozice
     do {
         start_position.x = uniform_width(e1);
         start_position.y = uniform_height(e1);
     } while (map.at<uchar>(start_position.y, start_position.x) == '#');
 
-    // CÌlov· pozice
+    // C√≠lov√° pozice
     do {
         end_position.x = uniform_width(e1);
         end_position.y = uniform_height(e1);
@@ -666,7 +664,7 @@ void App::genLabyrinth(cv::Mat& map) {
         std::cout << '\n';
     }
 
-    // Zarovnan· pozice kamery na start
+    // Zarovnan√° pozice kamery na start
     float offset_x = -maze_scale_x / 2.0f;
     float offset_z = -maze_scale_z / 2.0f;
 
@@ -687,9 +685,10 @@ bool App::isPositionBlocked(glm::vec3 pos)
     for (const auto& [name, model] : scene)
     {
         if (
-            name.rfind("wall_", 0) == 0 || // vöechny zdi
-            name == "goal_cube" //||         // cÌlov· kostka
-            //name == "my_first_object"      // rotujÌcÌ kostka
+            name.rfind("wall_", 0) == 0 || // v≈°echny zdi
+            name == "goal_cube" //||         // c√≠lov√° kostka
+            //name == "my_first_object"      // rotuj√≠c√≠ kostka
+
             )
         {
             glm::vec3 min = model.origin - model.scale * 0.5f;
@@ -741,7 +740,7 @@ void App::loadConfig() {
 
 void App::toggleFullscreen() {
     if (!fullscreen) {
-        // P¯epÌn·me do fullscreen ñ uloûit oknovou pozici a velikost
+        // P√∏ep√≠n√°me do fullscreen ‚Äì ulo≈æit oknovou pozici a velikost
         glfwGetWindowPos(window, &windowed_x, &windowed_y);
         glfwGetWindowSize(window, &windowed_width, &windowed_height);
     }
