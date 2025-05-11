@@ -688,8 +688,8 @@ bool App::isPositionBlocked(glm::vec3 pos)
     {
         if (
             name.rfind("wall_", 0) == 0 || // všechny zdi
-            name == "goal_cube" ||         // cílová kostka
-            name == "my_first_object"      // rotující kostka
+            name == "goal_cube" //||         // cílová kostka
+            //name == "my_first_object"      // rotující kostka
             )
         {
             glm::vec3 min = model.origin - model.scale * 0.5f;
