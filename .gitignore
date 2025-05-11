@@ -64,6 +64,9 @@ compile_commands.json
 *.VC.db
 *.ipch
 
+# ImGui
+imgui.ini
+
 # Ignore NuGet packages
 packages/
 
