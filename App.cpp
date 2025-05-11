@@ -2,7 +2,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "app.hpp"
-#include "assets.hpp"
+
 
 // vypisování HUDu
 #include <imgui.h>

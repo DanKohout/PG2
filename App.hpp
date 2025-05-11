@@ -17,7 +17,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "gl_err_callback.hpp"
-#include "assets.hpp"
+
 #include "ShaderProgram.hpp"
 #include "Model.hpp"
 #include "camera.hpp"
