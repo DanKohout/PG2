@@ -523,6 +523,7 @@ int App::run(void)
                 ImGui::Text("Flashlight: %s", flashlightOn ? "ON" : "OFF");
                 ImGui::Text("Antialiasing: %s", aaEnabled ? "ON" : "OFF");
                 ImGui::Text("Multisample: %s", glIsEnabled(GL_MULTISAMPLE) ? "YES" : "NO");
+                ImGui::Text("FOV: %.1f", fov);
                 ImGui::End();
             }
 

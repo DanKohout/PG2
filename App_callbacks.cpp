@@ -58,18 +58,15 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
         app->toggleFullscreen();
     }
 
-
-
-
-
 }
 
 void App::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    // get App instance
     auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
-    this_inst->fov += 10 * yoffset; // yoffset is mostly +1 or -1; one degree difference in fov is not visible
-    this_inst->fov = std::clamp(this_inst->fov, 20.0f, 170.0f); // limit FOV to reasonable values...
+
+    // Zmìna FOV podle koleèka myši (vìtšinou +1 nebo -1)
+    this_inst->fov -= static_cast<float>(yoffset) * 2.0f;  // zmìna o 2 stupnì
+    this_inst->fov = std::clamp(this_inst->fov, 30.0f, 90.0f);  // bezpeèné hodnoty
 
     this_inst->update_projection_matrix(window);
 }
