@@ -57,6 +57,11 @@ private:
     int win_width = 800;
     int win_height = 600;
 
+    // pro uložení okna ve window režimu
+    int windowed_x = 100, windowed_y = 100;
+    int windowed_width = win_width, windowed_height = win_height;
+
+
     void loadConfig();  // nová funkce
 
 
@@ -79,6 +84,7 @@ private:
     static void fbsize_callback(GLFWwindow* window, int width, int height);
     void drawText(const std::string& text, float x, float y);
     void toggleVsync();
+    void toggleFullscreen();
 
 
     

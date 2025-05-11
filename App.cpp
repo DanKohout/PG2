@@ -306,6 +306,8 @@ int App::run(void)
                 fps_timer = 0.0;
             }
 
+            my_shader.setUniform("uP_m", projection_matrix);
+
             std::vector<Model*> transparent;
             transparent.reserve(scene.size());
 
@@ -733,7 +735,31 @@ void App::loadConfig() {
     }
 }
 
+void App::toggleFullscreen() {
+    if (!fullscreen) {
+        // Pøepínáme do fullscreen – uložit oknovou pozici a velikost
+        glfwGetWindowPos(window, &windowed_x, &windowed_y);
+        glfwGetWindowSize(window, &windowed_width, &windowed_height);
+    }
 
+    fullscreen = !fullscreen;
 
+    GLFWmonitor* monitor = fullscreen ? glfwGetPrimaryMonitor() : nullptr;
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
+    int new_width = fullscreen ? mode->width : windowed_width;
+    int new_height = fullscreen ? mode->height : windowed_height;
+    int xpos = fullscreen ? 0 : windowed_x;
+    int ypos = fullscreen ? 0 : windowed_y;
+
+    glfwSetWindowMonitor(window, monitor, xpos, ypos, new_width, new_height, GLFW_DONT_CARE);
+
+    win_width = new_width;
+    win_height = new_height;
+
+    glViewport(0, 0, win_width, win_height);
+    update_projection_matrix(window);
+
+    std::cout << "Switched to " << (fullscreen ? "FULLSCREEN\n" : "WINDOWED\n");
+}
 

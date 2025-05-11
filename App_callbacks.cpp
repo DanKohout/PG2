@@ -53,6 +53,11 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
             app->jumpVelocity = 5.0f; // poèáteèní rychlost skoku (vìtší = vyšší skok)
         }
     }
+    else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
+        auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
+        app->toggleFullscreen();
+    }
+
 
 
 
