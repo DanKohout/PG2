@@ -26,6 +26,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <nlohmann/json.hpp>
 
 
 class App {
@@ -46,11 +47,18 @@ public:
     float jumpVelocity = 0.0f;
 
 
-
-
 private:
     static bool vsyncEnabled;
     static Camera camera;
+
+
+    bool aaEnabled = false;
+    bool fullscreen = false;
+    int win_width = 800;
+    int win_height = 600;
+
+    void loadConfig();  // nová funkce
+
 
     bool showHUD = false;
     bool flashlightOn = false;

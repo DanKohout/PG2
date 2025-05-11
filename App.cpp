@@ -9,6 +9,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include <fstream>
+
+
 
 
 
@@ -34,6 +37,7 @@ App::App()
 
 bool App::init()
 {
+    loadConfig();
     try {
         glfwSetErrorCallback(error_callback);
 
@@ -50,12 +54,17 @@ bool App::init()
         // Set OpenGL profile
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Core, comment this line for Compatible
 
+        // Antialiasing
+        glfwWindowHint(GLFW_SAMPLES, aaEnabled ? 4 : 0);
+        glfwWindowHint(GLFW_DEPTH_BITS, 24);  // depth buffer
+
+
 
 
 
         // open window (GL canvas) with no special properties
         // https://www.glfw.org/docs/latest/quick.html#quick_create_window
-        window = glfwCreateWindow(800, 600, "OpenGL context", NULL, NULL);
+        window = glfwCreateWindow(win_width, win_height, "OpenGL context", fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
         if (!window) {
             glfwTerminate();
             return false;
@@ -73,8 +82,8 @@ bool App::init()
         
 
         //V-SYNC
-        glfwSwapInterval(0);
-        vsyncEnabled = false;
+        glfwSwapInterval(vsyncEnabled ? 1 : 0);
+
 
         // init glew
         // http://glew.sourceforge.net/basic.html
@@ -83,6 +92,13 @@ bool App::init()
             fprintf(stderr, "Error: %s\n", glewGetErrorString(err)); /* Problem: glewInit failed, something is seriously wrong. */
         }
         wglewInit();
+
+        if (aaEnabled)
+            glEnable(GL_MULTISAMPLE);  // povol antialiasing
+
+        glEnable(GL_DEPTH_TEST);        // kreslení podle hloubky - Z buffer
+        glDepthFunc(GL_LESS);           // doporuèená funkce hloubkového testu
+
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
@@ -95,8 +111,6 @@ bool App::init()
         // if (not_success)
         //  throw std::runtime_error("something went bad");
 
-        // set GL params
-        glEnable(GL_DEPTH_TEST); // use Z buffer
 
         // assume ALL objects are non-transparent 
         glEnable(GL_CULL_FACE);
@@ -491,7 +505,7 @@ int App::run(void)
             glDisable(GL_BLEND);
             glDepthMask(GL_TRUE);
 
-            // === ImGui ===
+            // === ImGui === - HUD
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
@@ -505,6 +519,8 @@ int App::run(void)
                 ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)", camera.Position.x, camera.Position.y, camera.Position.z);
                 ImGui::Text("NoClip: %s", noclipEnabled ? "ON" : "OFF");
                 ImGui::Text("Flashlight: %s", flashlightOn ? "ON" : "OFF");
+                ImGui::Text("Antialiasing: %s", aaEnabled ? "ON" : "OFF");
+                ImGui::Text("Multisample: %s", glIsEnabled(GL_MULTISAMPLE) ? "YES" : "NO");
                 ImGui::End();
             }
 
@@ -693,5 +709,31 @@ void App::toggleVsync() {
     glfwSwapInterval(vsyncEnabled ? 1 : 0);
     std::cout << "VSync: " << (vsyncEnabled ? "ON" : "OFF") << std::endl;
 }
+
+void App::loadConfig() {
+    std::ifstream f("resources/config.json");
+    if (!f.is_open()) {
+        std::cerr << "Cannot open config.json. Using defaults.\n";
+        return;
+    }
+
+    nlohmann::json config;
+    try {
+        f >> config;
+        aaEnabled = config.value("antialiasing", false);
+        vsyncEnabled = config.value("vsync", false);
+        fullscreen = config.value("fullscreen", false);
+        noclipEnabled = config.value("noclip", false);
+        flashlightOn = config.value("flashlight", false);
+        win_width = config.value("window_width", 800);
+        win_height = config.value("window_height", 600);
+    }
+    catch (...) {
+        std::cerr << "Invalid config.json\n";
+    }
+}
+
+
+
 
 
