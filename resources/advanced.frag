@@ -40,6 +40,13 @@ struct SpotLight {
     float exponent;
 };
 
+struct EmissiveLight {
+    vec3 color;
+    vec3 position;
+    float radius;
+};
+
+
 uniform int spotOn;             // zapnutí / vypnutí
 uniform int pointOn;
 uniform int dirOn;
@@ -51,7 +58,8 @@ in VS_OUT {
 } fs_in;
 
 uniform SpotLight spotLight;
-uniform PointLight pointLight;
+uniform PointLight pointLight;//diamond
+uniform PointLight pointLight2;//moving cube
 uniform DirLight dirLight;
 
 uniform vec3 viewPos;
@@ -61,20 +69,22 @@ uniform vec3 matAmbient;
 uniform vec3 matSpecular;
 uniform float matShininess;
 
+
+
+
 // diamond
-uniform vec3 emissiveColor;
-uniform vec3 emissivePosition;
-uniform float emissiveRadius;
+uniform EmissiveLight diamondEmissive;
+// cube
+uniform EmissiveLight cubeEmissive;
 // sun
-uniform vec3 sunEmissiveColor;
-uniform vec3 sunEmissivePosition;
-uniform float sunEmissiveRadius;
+uniform EmissiveLight sunEmissive;
+
 
 uniform vec3 ambient;
 out vec4 frag_color;
 
 vec3 calcSpotLight();
-vec3 calcPointLight();
+vec3 calcPointLight(PointLight light);
 vec3 calcDirLight();
 
 void main()
@@ -88,12 +98,16 @@ void main()
     }
 
     if (pointOn == 1) {
-        finalColor += calcPointLight();
-
+        finalColor += calcPointLight(pointLight);
+        finalColor += calcPointLight(pointLight2);
         // Emissive glow simulation (simple hack)
-        float dist = length(emissivePosition - fs_in.FragPos);
-        float intensity = clamp(1.0 - dist / emissiveRadius, 0.0, 1.0);
-        finalColor += emissiveColor * intensity;
+        float dist = length(diamondEmissive.position - fs_in.FragPos);
+        float intensity = clamp(1.0 - dist / diamondEmissive.radius, 0.0, 1.0);
+        finalColor += diamondEmissive.color * intensity;
+        // moving cube
+        dist = length(cubeEmissive.position - fs_in.FragPos);
+        intensity = clamp(1.0 - dist / cubeEmissive.radius, 0.0, 1.0);
+        finalColor += cubeEmissive.color * intensity;
     }
 
     if (dirOn == 1)
@@ -101,9 +115,9 @@ void main()
         finalColor += calcDirLight();
 
     //the sun object can glow even underneath the ground - it doesnt matter
-    float distSun = length(sunEmissivePosition - fs_in.FragPos);
-    float sunGlow = 1.0 / (0.01 + pow(distSun / sunEmissiveRadius, 2.0));
-    finalColor += sunEmissiveColor * sunGlow;
+    float distSun = length(sunEmissive.position - fs_in.FragPos);
+    float sunGlow = 1.0 / (0.01 + pow(distSun / sunEmissive.radius, 2.0));
+    finalColor += sunEmissive.color * sunGlow;
     //finalColor += sunEmissiveColor * 1.0;
 
     //adding textures and putting it in the frag_color
@@ -137,25 +151,29 @@ vec3 calcSpotLight()
 }
 
 
-vec3 calcPointLight()
+vec3 calcPointLight(PointLight light)
 {
-    vec3 lightDir = normalize(pointLight.position - fs_in.FragPos);
-    float distance = length(pointLight.position - fs_in.FragPos);
-    float attenuation = 1.0 / (pointLight.constant + pointLight.linear * distance + pointLight.exponent * (distance * distance));
+    vec3 normal = normalize(fs_in.Normal);
+    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+    vec3 fragPos = fs_in.FragPos;
+    
+    vec3 lightDir = normalize(light.position - fragPos);
+    float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.exponent * (distance * distance));
 
     // Diffuse
-    vec3 normal = normalize(fs_in.Normal);
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = pointLight.diffuse * diff;
+    vec3 diffuse = light.diffuse * diff;
 
     // Specular
-    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), matShininess);
-    vec3 specular = pointLight.specular * spec * matSpecular;
+    vec3 specular = light.specular * spec * matSpecular;
 
     return attenuation * (diffuse + specular);
 }
+
+
 
 
 vec3 calcDirLight()

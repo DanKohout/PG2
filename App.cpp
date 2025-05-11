@@ -354,6 +354,7 @@ int App::run(void)
 
                 model.local_model_matrix = glm::translate(glm::mat4(1.0f), moved_origin);
                 model.local_model_matrix = glm::scale(model.local_model_matrix, model.scale);
+                
             }
 
             // Animace králíka
@@ -401,7 +402,7 @@ int App::run(void)
             
             my_shader.setUniform("spotOn", flashlightOn? 1:0);
             
-            //Point light
+            //Point light (diamond)
             glm::vec3 goal_position = scene.at("goal_cube").origin;
             my_shader.setUniform("pointLight.position", goal_position);
             my_shader.setUniform("pointLight.diffuse", glm::vec3(0.6f, 0.6f, 0.8f));  // blue-ish light
@@ -412,9 +413,25 @@ int App::run(void)
 
             my_shader.setUniform("pointOn", 1);
 
-            my_shader.setUniform("emissiveColor", glm::vec3(0.6f, 0.6f, 0.8f)); // blue-ish light
-            my_shader.setUniform("emissivePosition", goal_position);
-            my_shader.setUniform("emissiveRadius", 1.5f);  // tweak as needed
+            my_shader.setUniform("diamondEmissive.color", glm::vec3(0.6f, 0.6f, 0.8f)); // blue-ish light
+            my_shader.setUniform("diamondEmissive.position", goal_position);
+            my_shader.setUniform("diamondEmissive.radius", 1.5f);  // tweak as needed
+
+            //Point light (moving cube)
+            glm::vec3 moving_cube_position = glm::vec3(scene.at("my_first_object").local_model_matrix[3]);
+            //glm::vec3 moving_cube_position = scene.at("my_first_object").origin;->doesnt move with the cube
+            my_shader.setUniform("pointLight2.position", moving_cube_position);
+            my_shader.setUniform("pointLight2.diffuse", glm::vec3(0.6f, 0.5f, 0.45f));  // red-ish light
+            my_shader.setUniform("pointLight2.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+            my_shader.setUniform("pointLight2.constant", 1.0f);
+            my_shader.setUniform("pointLight2.linear", 0.09f);
+            my_shader.setUniform("pointLight2.exponent", 0.032f);
+
+            my_shader.setUniform("pointOn", 1);
+
+            my_shader.setUniform("cubeEmissive.color", glm::vec3(0.6f, 0.5f, 0.45f));  // red-ish light
+            my_shader.setUniform("cubeEmissive.position", moving_cube_position);
+            my_shader.setUniform("cubeEmissive.radius", 1.5f);  // tweak as needed
 
             //Directional light
             my_shader.setUniform("dirOn", 1);
@@ -443,9 +460,9 @@ int App::run(void)
                 my_shader.setUniform("dirOn", 0);  // Turn off light entirely
             }
             //sun-object emission
-            my_shader.setUniform("sunEmissivePosition", sun_position);
-            my_shader.setUniform("sunEmissiveColor", glm::vec3(1.0f, 1.0f, 0.5f));
-            my_shader.setUniform("sunEmissiveRadius", 10.0f);  // adjust for spread
+            my_shader.setUniform("sunEmissive.position", sun_position);
+            my_shader.setUniform("sunEmissive.color", glm::vec3(1.0f, 1.0f, 0.5f));
+            my_shader.setUniform("sunEmissive.radius", 10.0f);  // adjust for spread
 
 
 
