@@ -565,16 +565,19 @@ void App::update_projection_matrix(/*void*/GLFWwindow* window)
 App::~App()
 {
     my_shader.clear();
+    
     if (window)
         glfwDestroyWindow(window);
-    glfwTerminate();
-    // clean-up
-    cv::destroyAllWindows();
-    std::cout << "Bye...\n";
     // === ImGui Shutdown ===
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    glfwTerminate();
+    // clean-up
+    cv::destroyAllWindows();
+    std::cout << "Bye...\n";
+    
 
 }
 
